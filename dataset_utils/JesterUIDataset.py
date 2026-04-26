@@ -1,3 +1,7 @@
+# Reference: 
+# Kaggle author: PEACE AKHAZE 
+# Kaggle notebook link: https://www.kaggle.com/code/peaceakhaze/notebook53b831d07d
+
 import os
 from PIL import Image
 import torch
