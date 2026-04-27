@@ -152,6 +152,71 @@ pip download \
 scp -r /Users/johnson.huang/py_ds/manually_downloaded_pkg shhuang@login.zaratan.umd.edu:/home/shhuang
 ```
 
+
+## 11. HPC Commands
+
+### Job Submission
+
+```bash
+# Submit training job
+sbatch run_train.sbatch
+
+# Output: Submitted batch job JOBID
+```
+
+### Monitoring
+
+- note. specify all jobids and tail those corresponding logs
+
+```bash
+squeue -u $USER -h -t RUNNING -o "slurm-%i.out" | xargs -r tail -f
+```
+
+```bash
+# Check job status
+squeue -u $USER
+
+# Check available GPUs
+sinfo -p gpu -t idle -o "%n %G"
+
+# Monitor log in real-time
+tail -f slurm-JOBID.out
+
+# Check file sizes
+du -h --max-depth=1
+```
+
+
+### Job Management
+
+```bash
+# Cancel job
+scancel JOBID
+
+# Cancel all your jobs
+scancel -u $USER
+
+# Job details
+scontrol show job JOBID
+```
+
+### HPC Configuration
+
+Current setup (`run_train.sbatch`):
+```bash
+#SBATCH --gres=gpu:h100:4      # 4× H100 GPUs
+#SBATCH --cpus-per-task=8      # 8 CPU cores
+#SBATCH --mem=48G              # 48GB RAM
+#SBATCH --time=08:00:00        # 8 hour limit
+```
+
+**Optimizations enabled**:
+- cuDNN benchmarking (faster convolutions)
+- TF32 precision (faster on H100/A100)
+- Parallel data loading (4 workers)
+- Pinned memory (faster GPU transfer)
+- Automatic Mixed Precision (AMP)
+
 ---
 
 ## temp

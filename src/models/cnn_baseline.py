@@ -6,16 +6,19 @@ class InceptionV3Baseline(nn.Module):
     def __init__(self, num_classes=14):
         super(InceptionV3Baseline, self).__init__()
         
-        # Load Pre-trained InceptionV3
-        # aux_logits=False prevents Inception from returning a tuple during training
-        self.inception = inception_v3(weights=Inception_V3_Weights.DEFAULT, aux_logits=False)
+        # 1. Load Pre-trained InceptionV3 (let it load the aux branch initially)
+        self.inception = inception_v3(weights=Inception_V3_Weights.DEFAULT)
         
-        # We want to extract features, not classify ImageNet categories.
+        # 2. Manually disable the auxiliary branch
+        # This prevents Inception from returning a tuple of (output, aux_output) during training
+        self.inception.aux_logits = False
+        self.inception.AuxLogits = None
+        
+        # 3. We want to extract features, not classify ImageNet categories.
         # InceptionV3's final layer is named 'fc'. We replace it with an Identity layer.
-        # Passing an image through self.inception now outputs a [2048] feature vector.
         self.inception.fc = nn.Identity()
         
-        # Final Classification Head
+        # 4. Final Classification Head
         # Maps the temporally pooled 2048-dim vector to our 14 dynamic gesture classes
         self.classifier = nn.Linear(2048, num_classes)
 
@@ -23,25 +26,19 @@ class InceptionV3Baseline(nn.Module):
         # Expected input 'x' shape: [batch_size, 16, 3, 299, 299]
         batch_size, num_frames, C, H, W = x.shape
         
-        # 1. Collapse Batch and Time dimensions
-        # InceptionV3 only processes 2D images, so we pretend we have a huge batch of individual images
+        # Collapse Batch and Time dimensions
         x = x.view(batch_size * num_frames, C, H, W)
         
-        # 2. Spatial Extraction
-        # Shape becomes: [batch_size * 16, 2048]
+        # Spatial Extraction -> [batch_size * 16, 2048]
         spatial_features = self.inception(x)
         
-        # 3. Unflatten back to separate temporal dimension
-        # Shape becomes: [batch_size, 16, 2048]
+        # Unflatten back to separate temporal dimension -> [batch_size, 16, 2048]
         spatial_features = spatial_features.view(batch_size, num_frames, 2048)
         
-        # 4. Temporal Pooling (Global Average Pooling across the 16 frames)
-        # We average along dimension 1 (the num_frames dimension)
-        # Shape becomes: [batch_size, 2048]
+        # Temporal Pooling (Global Average Pooling across the 16 frames) -> [batch_size, 2048]
         pooled_features = spatial_features.mean(dim=1)
         
-        # 5. Final Classification
-        # Shape becomes: [batch_size, 14]
+        # Final Classification -> [batch_size, 14]
         logits = self.classifier(pooled_features)
         
         return logits
