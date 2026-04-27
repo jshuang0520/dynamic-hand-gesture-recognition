@@ -104,6 +104,29 @@ model = models.inception_v3(pretrained=True)
 model.eval()
 ```
 
+- download the packages manually and then upload to HPC
+```bash
+# Step 1: Download Packages (On Internet-Connected Machine)
+mkdir -p /Users/johnson.huang/py_ds/manually_downloaded_pkg/torch_offline
+cd /Users/johnson.huang/py_ds/manually_downloaded_pkg/torch_offline
+# Download exactly Python 3.11 and Linux x86_64 for HPC (Red Hat VERSION=8.10)
+# NOTE. even if not using python 3.11 environment, this works, too!
+pip download \
+  --index-url https://download.pytorch.org/whl/cu126 \
+  --only-binary=:all: \
+  --platform manylinux_2_28_x86_64 \
+  --python-version 311 \
+  --implementation cp \
+  --abi cp311 \
+  torch==2.9.1+cu126 \
+  torchvision==0.24.1+cu126 \
+  torchaudio==2.9.1+cu126
+
+
+# Step 2: Transfer Files to HPC
+scp -r /Users/johnson.huang/py_ds/manually_downloaded_pkg shhuang@login.zaratan.umd.edu:/home/shhuang
+```
+
 ---
 
 ## temp
