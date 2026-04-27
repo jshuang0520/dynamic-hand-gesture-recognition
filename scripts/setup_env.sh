@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# 1. Dynamically get the project root (dynamic-hand-gesture-recognition)
+# 1. Dynamically get the project root
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
@@ -16,14 +16,19 @@ if [[ "$1" == "--update" || "$1" == "-u" ]]; then
     UPDATE_REQS=true
 fi
 
-# 3. Check if the virtual environment exists on the scratch drive
-if [ ! -d "$ENV_DIR" ]; then
-    echo "[INFO] Virtual environment not found. Creating one in $ENV_DIR..."
+# 3. Check if the environment is TRULY valid by looking for the activate script
+if [ ! -f "$ENV_DIR/bin/activate" ]; then
+    echo "[INFO] Valid environment not found or corrupted. Building a fresh one..."
     mkdir -p "${HOME}/scratch.msml640"
+    
+    # Nuke the folder if it's a corrupted "half-built" shell
+    rm -rf "$ENV_DIR"
+    
+    # Actually build the Python environment
     python3.11 -m venv "$ENV_DIR"
     UPDATE_REQS=true
 else
-    echo "[INFO] Found existing virtual environment on scratch drive."
+    echo "[INFO] Found valid virtual environment on scratch drive."
 fi
 
 # 4. Activate the environment
@@ -32,6 +37,13 @@ source "$ENV_DIR/bin/activate"
 # 5. Install or update requirements with OFFLINE FALLBACK & ERROR CHECKING
 if [ "$UPDATE_REQS" = true ]; then
     echo "[INFO] Installing/Updating packages..."
+    
+    # Extra Safety Check: Ensure pip exists before trying to use it
+    if ! command -v pip &> /dev/null; then
+        echo "🚨 [ERROR] pip is missing! The virtual environment failed to build correctly."
+        return 1 2>/dev/null || exit 1
+    fi
+
     pip install --upgrade pip
     
     OFFLINE_DIR="${HOME}/manually_downloaded_pkg/torch_offline"
@@ -40,7 +52,6 @@ if [ "$UPDATE_REQS" = true ]; then
     if [ -f "$REQ_FILE" ]; then
         if [ -d "$OFFLINE_DIR" ]; then
             echo "[INFO] Found offline packages. Prioritizing local wheels..."
-            # The || triggers if pip fails, flipping our success variable
             pip install -f "$OFFLINE_DIR" -r "$REQ_FILE" || INSTALL_SUCCESS=false
         else
             pip install -r "$REQ_FILE" || INSTALL_SUCCESS=false
@@ -55,7 +66,6 @@ if [ "$UPDATE_REQS" = true ]; then
             echo "🚨 One or more packages could not be installed."
             echo "🚨 The environment is active, but missing dependencies."
             echo "--------------------------------------------------------"
-            # Stop the script here so we don't print [SUCCESS] below
             return 1 2>/dev/null || exit 1 
         fi
     else
@@ -66,7 +76,7 @@ else
     echo "ℹ️ [INFO] Skipping installation. Run with --update to force refresh."
 fi
 
-# This will only print if the script didn't hit a 'return 1' above
+# This will only print if everything succeeded
 echo "✅ [SUCCESS] SHAN Environment is fully built and active!"
 echo "📍 [PATH] Environment installed at: $ENV_DIR"
 
