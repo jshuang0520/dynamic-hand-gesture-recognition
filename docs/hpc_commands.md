@@ -27,7 +27,7 @@ scp -r shhuang@login.zaratan.umd.edu:/home/shhuang/scratch/Comparative-Analysis-
 
 ------------------------------------------------------------------------------------------
 
-## on HPC
+## As long
 
 ### change file / dir permission
 
