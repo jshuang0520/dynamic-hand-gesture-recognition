@@ -4,8 +4,10 @@
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-# The env and requirements live inside the code repo
-ENV_DIR="$PROJECT_ROOT/gesture_rec_env"
+# Point the environment to the massive scratch drive
+ENV_DIR="${HOME}/scratch.msml640/gesture_rec_env"
+
+# The requirements file still lives inside the code repo
 REQ_FILE="$PROJECT_ROOT/requirements_hpc.txt"
 
 # 2. Check for the --update parameter
@@ -14,42 +16,59 @@ if [[ "$1" == "--update" || "$1" == "-u" ]]; then
     UPDATE_REQS=true
 fi
 
-# 3. Check if the virtual environment exists
+# 3. Check if the virtual environment exists on the scratch drive
 if [ ! -d "$ENV_DIR" ]; then
-    echo "[INFO] Virtual environment not found. Creating one in $PROJECT_ROOT..."
+    echo "[INFO] Virtual environment not found. Creating one in $ENV_DIR..."
+    mkdir -p "${HOME}/scratch.msml640"
     python3.11 -m venv "$ENV_DIR"
     UPDATE_REQS=true
 else
-    echo "[INFO] Found existing virtual environment."
+    echo "[INFO] Found existing virtual environment on scratch drive."
 fi
 
 # 4. Activate the environment
 source "$ENV_DIR/bin/activate"
 
-# 5. Install or update requirements with OFFLINE FALLBACK
+# 5. Install or update requirements with OFFLINE FALLBACK & ERROR CHECKING
 if [ "$UPDATE_REQS" = true ]; then
     echo "[INFO] Installing/Updating packages..."
     pip install --upgrade pip
     
-    # Points exactly to your structure outside the repo
     OFFLINE_DIR="${HOME}/manually_downloaded_pkg/torch_offline"
+    INSTALL_SUCCESS=true
     
     if [ -f "$REQ_FILE" ]; then
         if [ -d "$OFFLINE_DIR" ]; then
             echo "[INFO] Found offline packages. Prioritizing local wheels..."
-            pip install -f "$OFFLINE_DIR" -r "$REQ_FILE"
+            # The || triggers if pip fails, flipping our success variable
+            pip install -f "$OFFLINE_DIR" -r "$REQ_FILE" || INSTALL_SUCCESS=false
         else
-            pip install -r "$REQ_FILE"
+            pip install -r "$REQ_FILE" || INSTALL_SUCCESS=false
         fi
-        echo "[INFO] Dependencies installed successfully!"
+        
+        # --- THE SAFETY CHECK ---
+        if [ "$INSTALL_SUCCESS" = true ]; then
+            echo "[INFO] Dependencies installed successfully!"
+        else
+            echo "--------------------------------------------------------"
+            echo "🚨 [WARNING] PIP INSTALLATION FAILED!"
+            echo "🚨 One or more packages could not be installed."
+            echo "🚨 The environment is active, but missing dependencies."
+            echo "--------------------------------------------------------"
+            # Stop the script here so we don't print [SUCCESS] below
+            return 1 2>/dev/null || exit 1 
+        fi
     else
-        echo "[ERROR] $REQ_FILE not found in $PROJECT_ROOT."
+        echo "🚨 [ERROR] $REQ_FILE not found in $PROJECT_ROOT."
+        return 1 2>/dev/null || exit 1
     fi
 else
-    echo "[INFO] Skipping installation. Run with --update to force refresh."
+    echo "ℹ️ [INFO] Skipping installation. Run with --update to force refresh."
 fi
 
-echo "[SUCCESS] SHAN Environment is active!"
+# This will only print if the script didn't hit a 'return 1' above
+echo "✅ [SUCCESS] SHAN Environment is fully built and active!"
+echo "📍 [PATH] Environment installed at: $ENV_DIR"
 
 
 # How to use it:

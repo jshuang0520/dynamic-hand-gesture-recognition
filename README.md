@@ -160,12 +160,14 @@ actions:
 
 1.⁠ ⁠build python env on HPC
 
-- Test the Env: Run `source scripts/setup_env.sh`
+- Test the Env: Run `source ~/dynamic-hand-gesture-recognition/scripts/setup_env.sh`
+
+- After package updates: Run `source ~/dynamic-hand-gesture-recognition/scripts/setup_env.sh --update`
 
 2.⁠ ⁠⁠read the images, turn it into tensors that are recognizable by the models like InceptionV3 or ResNet for the recognition task
 
-- Test the Model: Run `python src/models/cnn_baseline.py`
+- Test the Model: Run `python ~/dynamic-hand-gesture-recognition/src/models/cnn_baseline.py`
 
 3.⁠ ⁠run InceptionV3 as our baseline (Experiment 1) - refer to 01_generate_14k_subsample.ipynb last cells: train a simple inception baseline
 
-- Start the ETL: `Run sbatch scripts/run_extraction.sbatch`
+- Start the ETL: Run `sbatch ~/dynamic-hand-gesture-recognition/scripts/run_extraction.sbatch`
