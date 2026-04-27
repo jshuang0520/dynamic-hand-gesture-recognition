@@ -2,7 +2,7 @@
 
 ------------------------------------------------------------------------------------------
 
-## on your local machine
+## On your local machine
 
 ### connect to HPC
 ```bash
@@ -27,7 +27,31 @@ scp -r shhuang@login.zaratan.umd.edu:/home/shhuang/scratch/Comparative-Analysis-
 
 ------------------------------------------------------------------------------------------
 
-## As long
+## As long as in Linux environment
+
+
+### file size
+
+- show the top 10 largest files
+```bash
+du -ah . | sort -rh | head -n 10
+```
+
+- show number of dirs where one is larger than a specific size
+```bash
+du -h --max-depth=1 --threshold=20K | wc -l
+```
+
+- show number of files where one is larger than a specific size
+```bash
+find . -type f -size +5k | wc -l
+
+The `-size` flag supports several units of measurement: 
+- `c`: Bytes
+- `k`: Kilobytes (1024 bytes)
+- `M`: Megabytes (1024 kilobytes)
+- `G`: Gigabytes (1024 megabytes) 
+```
 
 ### change file / dir permission
 
