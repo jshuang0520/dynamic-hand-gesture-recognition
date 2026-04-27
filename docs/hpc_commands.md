@@ -11,13 +11,19 @@ ssh shhuang@login.zaratan.umd.edu
 
 ### upload file or folder from your local machine to HPC
 
-- note. `-r` for uploading a folder; without this param for uploading a file
+- note. `scp -r` for uploading a folder; without this param for uploading a file
 ```bash
 # pattern like this
 scp -r LOCAL_DIR_FULL_PATH HPC_ACCOUNT@login.zaratan.umd.edu:HPC_DESTINATION_DIR_FULL_PATH
 
 # e.g.
-scp -r /Users/johnson.huang/Downloads/Meta-Llama-3-8B-Instruct shhuang@login.zaratan.umd.edu:/home/shhuang/scratch/Comparative-Analysis-of-Gun-Violence-Coverage-Across-News-Outlets/hf-cache 
+scp -r /Users/johnson.huang/py_ds/dynamic-hand-gesture-recognition shhuang@login.zaratan.umd.edu:/home/shhuang
+```
+
+#### [!NOTE] rsync to exclude some files
+
+```bash
+rsync -avz --exclude '.git' /Users/johnson.huang/py_ds/dynamic-hand-gesture-recognition shhuang@login.zaratan.umd.edu:/home/shhuang/
 ```
 
 ### download file or folder from HPC to your local machine

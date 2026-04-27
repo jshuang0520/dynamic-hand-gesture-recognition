@@ -1,6 +1,6 @@
 # dynamic-hand-gesture-recognition
 
-## project directory structures
+## [!IMPORTANT] project directory structures
 
 ```
 /home/shhuang
@@ -92,6 +92,20 @@ Cannot be written until a best_model.pth is generated.
 ---
 
 ## Miscellaneous
+
+### upload file or folder from your local machine to HPC
+
+- `scp`
+
+```bash
+scp -r /Users/johnson.huang/py_ds/dynamic-hand-gesture-recognition shhuang@login.zaratan.umd.edu:/home/shhuang
+```
+
+- [!NOTE] `rsync` to exclude some files
+
+```bash
+rsync -avz --exclude '.git' /Users/johnson.huang/py_ds/dynamic-hand-gesture-recognition shhuang@login.zaratan.umd.edu:/home/shhuang/
+```
 
 ### download models manually and upload to HPC
 
