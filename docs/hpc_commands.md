@@ -30,6 +30,29 @@ scp -r shhuang@login.zaratan.umd.edu:/home/shhuang/scratch/Comparative-Analysis-
 ## As long as in Linux environment
 
 
+### ls
+
+- only list dirs but not files, and each sub-directory layer, only show 10 dirs from them
+```bash
+find . -maxdepth 3 -type d | awk -F/ '{parent=$0; sub(/\/[^\/]+$/, "", parent)} count[parent]++ < 10' | sed -e 's/[^-][^\/]*\// |/g' -e 's/|/|--/g'
+```
+```
+.
+ |--jester_splits
+ |--20bn-jester-v1
+ |-- |--119126
+ |-- |--89507
+ |-- |--29296
+ |-- |--106212
+ |-- |--55256
+ |-- |--72795
+ |-- |--16876
+ |-- |--142223
+ |-- |--73026
+ |-- |--19297
+```
+
+
 ### file size
 
 - show the top 10 largest files
