@@ -1,13 +1,14 @@
 experiment_name: "SHAN_14k_Subsample"
 
 reproducibility:
-  # IMPORTANT: Check with Hannah! If she used a specific seed in 
-  # 01_generate_14k_subsample.ipynb, replace 202605 with her seed here.
   seed: 202605
   deterministic_cudnn: true
 
 data:
+  # RAW DATA (Read-Only)
   frames_dir: "${HOME}/jester_uncompressed/20bn-jester-v1/"
+  
+  # SHARED PIPELINE I/O (Hannah and you share this)
   keypoints_dir: "${HOME}/shan_project/data/keypoints_cache/"
   train_csv: "${HOME}/shan_project/data/splits/train.csv"
   val_csv: "${HOME}/shan_project/data/splits/val.csv"
@@ -17,4 +18,4 @@ data:
   frames_per_video: 16
 
 extraction:
-  num_workers: 8 # Will map to our 8 requested HPC cores
+  num_workers: 8

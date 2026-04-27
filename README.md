@@ -1,5 +1,16 @@
 # dynamic-hand-gesture-recognition
 
+## project directory structures
+
+```
+/home/shhuang
+|_ dynamic-hand-gesture-recognition (code)
+|_ manually_downloaded_pkg
+|_ .cache (manually downloaded models, like InceptionV3)
+|_ jester_uncompressed (our raw dataset; the sub-dataset from the original huge dataset; already train-test split)
+|_ shan_project (shared data/output directory, including metadata and logs; this shared data folder is not under the project root because the project root is only for the code, and it will be frequently re-uploaded from local machine to HPC)
+```
+
 ## data preprocessing
 
 ### entry point
