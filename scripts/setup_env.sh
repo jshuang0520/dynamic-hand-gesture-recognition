@@ -5,7 +5,8 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 # Point the environment to the massive scratch drive
-ENV_DIR="${HOME}/scratch.msml640/gesture_rec_env"
+# ENV_DIR="${HOME}/scratch.msml640/gesture_rec_env"  # FIXME: should be scratch.msml640
+ENV_DIR="${HOME}/gesture_rec_env"
 
 # The requirements file still lives inside the code repo
 REQ_FILE="$PROJECT_ROOT/requirements_hpc.txt"

@@ -5,18 +5,32 @@
 #SBATCH --mem=24G
 #SBATCH --time=04:00:00 
 #SBATCH --output=/home/shhuang/shan_project/slurm_logs/etl-%j.out
-# #SBATCH --account=<your_allocation>   # uncomment and fill if SLURM complains
 
 set -euo pipefail
 
-# Ensure the shared logs directory exists before running
 mkdir -p ${HOME}/shan_project/slurm_logs
 
-# Activate the environment
-source scripts/setup_env.sh
+# 1. Dynamically load the user's personal config file
+source ${HOME}/dynamic-hand-gesture-recognition/.env
+
+# ---------------------------------------------------------
+# THE CURE: Scrub SLURM's toxic snapshot and block ghost paths
+# ---------------------------------------------------------
+unset VIRTUAL_ENV
+unset PYTHONHOME
+export PYTHONNOUSERSITE=1  # Completely ignores ~/.local ghost packages
+
+# Now that the air is clean, safely activate using your dynamic variable
+source ${VENV_DIR}/bin/activate
+# ---------------------------------------------------------
 
 echo "Starting Parallel MediaPipe Extraction (16 Workers)..."
-# Tell Python exactly where the project root is so it can find 'utilities'
 export PYTHONPATH="${HOME}/dynamic-hand-gesture-recognition"
+
+# THE LIE DETECTOR: Force the compute node to print its version to your log file
+python -c "import mediapipe; print('🤖 COMPUTE NODE MEDIAPIPE VERSION:', mediapipe.__version__)"
+
+# Run the code normally (because we activated cleanly, 'python' is now perfectly safe)
 python mains/01_extract_keypoints.py
+
 echo "Extraction Complete!"

@@ -6,8 +6,9 @@ reproducibility:
 
 data:
   # RAW DATA (Read-Only)
-  frames_dir: "${HOME}/jester_uncompressed/20bn-jester-v1/"
-  
+  # frames_dir: "${HOME}/jester_uncompressed/20bn-jester-v1/" 
+  frames_dir: "${HOME}/jester_uncompressed/jester_subsample/"
+
   # SHARED PIPELINE I/O
   keypoints_dir: "${HOME}/shan_project/data/keypoints_cache/"
   

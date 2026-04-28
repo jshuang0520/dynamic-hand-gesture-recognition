@@ -1,8 +1,17 @@
 ```bash
-source ~/dynamic-hand-gesture-recognition/scripts/setup_env.sh
+# activate virtual env
+source ~/gesture_rec_env/bin/activate
+
+source ~/dynamic-hand-gesture-recognition/scripts/setup_env.sh && \
+python ~/dynamic-hand-gesture-recognition/src/models/cnn_baseline.py && \
+sbatch ~/dynamic-hand-gesture-recognition/scripts/run_extraction.sbatch && \
+squeue -u $USER && \
+ls -t ${HOME}/shan_project/slurm_logs/*.out | head -1 | xargs tail -f
+
 
 # Check job status
 squeue -u $USER
+ls -t ${HOME}/shan_project/slurm_logs/*.out | head -1 | xargs tail -f
 
 # Check available GPUs
 sinfo -p gpu -t idle -o "%n %G"

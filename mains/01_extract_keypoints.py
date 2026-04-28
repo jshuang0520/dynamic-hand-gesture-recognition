@@ -1,3 +1,4 @@
+import multiprocessing
 import os
 import pandas as pd
 import torch
@@ -40,6 +41,9 @@ def process_video_worker(args):
     return True
 
 if __name__ == "__main__":
+    # THE CURE: Force fresh workers so MediaPipe C++ bindings don't corrupt
+    multiprocessing.set_start_method('spawn', force=True)
+    
     print("[INFO] Initializing Parallel Keypoint Extraction...")
     config = load_config()
     
