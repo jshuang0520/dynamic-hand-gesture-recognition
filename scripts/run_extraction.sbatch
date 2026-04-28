@@ -6,6 +6,8 @@
 #SBATCH --time=04:00:00 
 #SBATCH --output=/home/shhuang/shan_project/slurm_logs/etl-%j.out
 
+PROJECT_ROOT="${HOME}/dynamic-hand-gesture-recognition"
+
 set -euo pipefail
 
 mkdir -p ${HOME}/shan_project/slurm_logs
@@ -25,12 +27,12 @@ source ${VENV_DIR}/bin/activate
 # ---------------------------------------------------------
 
 echo "Starting Parallel MediaPipe Extraction (16 Workers)..."
-export PYTHONPATH="${HOME}/dynamic-hand-gesture-recognition"
+export PYTHONPATH="${PROJECT_ROOT}"
 
 # THE LIE DETECTOR: Force the compute node to print its version to your log file
 python -c "import mediapipe; print('🤖 COMPUTE NODE MEDIAPIPE VERSION:', mediapipe.__version__)"
 
 # Run the code normally (because we activated cleanly, 'python' is now perfectly safe)
-python mains/01_extract_keypoints.py
+python "${PROJECT_ROOT}/mains/01_extract_keypoints.py"
 
 echo "Extraction Complete!"
