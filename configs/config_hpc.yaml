@@ -8,11 +8,13 @@ data:
   # RAW DATA (Read-Only)
   frames_dir: "${HOME}/jester_uncompressed/20bn-jester-v1/"
   
-  # SHARED PIPELINE I/O (Hannah and you share this)
+  # SHARED PIPELINE I/O
   keypoints_dir: "${HOME}/shan_project/data/keypoints_cache/"
-  train_csv: "${HOME}/shan_project/data/splits/train.csv"
-  val_csv: "${HOME}/shan_project/data/splits/val.csv"
-  test_csv: "${HOME}/shan_project/data/splits/test.csv"
+  
+  # CORRECTED SPLIT PATHS
+  train_csv: "${HOME}/jester_uncompressed/jester_splits/train.csv"
+  val_csv: "${HOME}/jester_uncompressed/jester_splits/val.csv"
+  test_csv: "${HOME}/jester_uncompressed/jester_splits/test.csv"
   
   num_classes: 14
   frames_per_video: 16

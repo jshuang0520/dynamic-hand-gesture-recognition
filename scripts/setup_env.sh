@@ -12,7 +12,7 @@ REQ_FILE="$PROJECT_ROOT/requirements_hpc.txt"
 
 # 2. Check for the --update parameter
 UPDATE_REQS=false
-if [[ "$1" == "--update" || "$1" == "-u" ]]; then
+if [[ "${1:-}" == "--update" || "${1:-}" == "-u" ]]; then
     UPDATE_REQS=true
 fi
 
@@ -52,9 +52,9 @@ if [ "$UPDATE_REQS" = true ]; then
     if [ -f "$REQ_FILE" ]; then
         if [ -d "$OFFLINE_DIR" ]; then
             echo "[INFO] Found offline packages. Prioritizing local wheels..."
-            pip install -f "$OFFLINE_DIR" -r "$REQ_FILE" || INSTALL_SUCCESS=false
+            pip install --no-cache-dir -f "$OFFLINE_DIR" -r "$REQ_FILE" || INSTALL_SUCCESS=false
         else
-            pip install -r "$REQ_FILE" || INSTALL_SUCCESS=false
+            pip install --no-cache-dir -r "$REQ_FILE" || INSTALL_SUCCESS=false
         fi
         
         # --- THE SAFETY CHECK ---
