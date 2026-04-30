@@ -4,13 +4,15 @@ source ~/gesture_rec_env/bin/activate
 
 source ~/dynamic-hand-gesture-recognition/scripts/setup_env.sh && \
 python ~/dynamic-hand-gesture-recognition/src/models/cnn_baseline.py && \
+sbatch /home/shhuang/dynamic-hand-gesture-recognition/scripts/run_training.sbatch && \
 sbatch ~/dynamic-hand-gesture-recognition/scripts/run_extraction.sbatch && \
-squeue -u $USER && \
+squeue -u $USER --start >> job_estimated_wait_time.txt && \
 ls -t ${HOME}/shan_project/slurm_logs/*.out | head -1 | xargs tail -f
 
 
 # Check job status
 squeue -u $USER
+squeue -u $USER --start >> job_estimated_wait_time.txt
 ls -t ${HOME}/shan_project/slurm_logs/*.out | head -1 | xargs tail -f
 
 # Check available GPUs
