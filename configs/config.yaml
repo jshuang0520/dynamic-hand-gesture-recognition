@@ -1,0 +1,14 @@
+experiment:
+  # Universal Seed for complete reproducibility across ETL, Training, and Eval
+  seed: 20260430
+  num_classes: 4
+  batch_size: 16
+  learning_rate: 0.0001
+  quick_test: true       # Set to false for the production HPC run
+  execution_mode: "gpu"
+
+paths:
+  # Dynamically expanded by the parser using the .env file
+  frames_dir: "${RAW_DATA_DIR}"
+  splits_dir: "${SHAN_PROJECT_DIR}/data/splits/"
+  weights_dir: "${SHAN_PROJECT_DIR}/weights/"

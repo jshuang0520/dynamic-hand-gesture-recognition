@@ -1,27 +1,20 @@
 import os
 import yaml
+from dotenv import load_dotenv
 
-def load_config(config_path=None):
-    """Loads YAML and dynamically expands environment variables like ${HOME}."""
+def load_config(config_path="configs/config.yaml"):
+    """Loads environment variables and parses the YAML configuration."""
+    load_dotenv() # Injects .env variables into os.environ
     
-    # 1. Dynamically find the project root
-    # __file__ gets the path of this exact parser script (utilities/config_parser.py)
-    # os.path.dirname gets the parent directory
     current_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(current_dir)
+    full_config_path = os.path.join(project_root, config_path)
     
-    # 2. Safely construct the absolute default path
-    if config_path is None:
-        config_path = os.path.join(project_root, "configs", "config_hpc.yaml")
-
-    if not os.path.exists(config_path):
-        raise FileNotFoundError(f"🚨 Config file not found at: {config_path}")
+    if not os.path.exists(full_config_path):
+        raise FileNotFoundError(f"[ERROR] Config file not found at: {full_config_path}")
         
-    with open(config_path, 'r') as f:
+    with open(full_config_path, 'r') as f:
         raw_yaml = f.read()
         
-    # 3. Expand bash variables (like ${HOME}) BEFORE parsing the YAML
     expanded_yaml = os.path.expandvars(raw_yaml)
-    config = yaml.safe_load(expanded_yaml)
-    
-    return config
+    return yaml.safe_load(expanded_yaml)
