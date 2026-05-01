@@ -14,7 +14,7 @@ class Trainer:
         self.quick_test = quick_test
         
         if self.quick_test:
-            logger("QUICK_TEST is ENABLED. Truncating loops to 2 batches.", "WARNING")
+            logger.info("QUICK_TEST is ENABLED. Truncating loops to 2 batches.", "WARNING")
 
     def run(self, mode="gpu", epochs=10):
         # --- Device Setup ---
@@ -42,7 +42,7 @@ class Trainer:
                 
                 train_loss += loss.item()
                 
-            logger(f"[EPOCH {epoch}/{actual_epochs}] Train Loss: {train_loss / (batch_idx + 1):.4f}")
+            logger.info(f"[EPOCH {epoch}/{actual_epochs}] Train Loss: {train_loss / (batch_idx + 1):.4f}")
             
-        logger("Training phase complete.")
+        logger.info("Training phase complete.")
         return self.model

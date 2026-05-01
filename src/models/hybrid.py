@@ -9,7 +9,7 @@ class HybridResNetLSTM(nn.Module):
     """Proposed architecture: Pre-trained ResNet50 spatial extractor + Temporal LSTM."""
     def __init__(self, num_classes=4, hidden_dim=256):
         super(HybridResNetLSTM, self).__init__()
-        logger("Initializing Hybrid ResNet-50 + LSTM Architecture")
+        logger.info("Initializing Hybrid ResNet-50 + LSTM Architecture")
         
         # Spatial Feature Extractor
         self.backbone = resnet50(weights=ResNet50_Weights.DEFAULT)
