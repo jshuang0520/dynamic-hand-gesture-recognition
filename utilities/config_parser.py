@@ -15,7 +15,7 @@ def load_config():
         logger(f"Invalid ENV '{env_mode}'. Defaulting to 'dev'.", "WARNING")
         env_mode = "dev"
         
-    logger(f"Loading configuration for: {env_mode.upper()}")
+    logger.info(f"Loading configuration for: {env_mode.upper()}")
     
     config_path = f"configs/{env_mode}/config.yaml"
     current_dir = os.path.dirname(os.path.abspath(__file__))

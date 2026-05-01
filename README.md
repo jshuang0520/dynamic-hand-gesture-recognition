@@ -56,14 +56,14 @@ To ensure 100% scientific reproducibility and bypass the I/O bottlenecks of read
 
 1. **Initialize Paths:** Configure your `.env` file based on `.env.example`.
 2. **Create Directories:** Initialize the output folder structure.
-    ```bash
-    chmod +x scripts/init_dirs.sh
-    ./scripts/init_dirs.sh
-    ```
+```bash
+chmod +x scripts/init_dirs.sh
+./scripts/init_dirs.sh
+```
 3. **Build Environment:** Build the Python 3.11 venv at the path specified in your `.env`.
-    ```bash
-    bash scripts/setup_env.sh
-    ```
+```bash
+bash scripts/setup_env.sh
+```
 
 ---
 
@@ -71,8 +71,8 @@ To ensure 100% scientific reproducibility and bypass the I/O bottlenecks of read
 
 ### 1. Data Preparation Pipeline
 ```bash
-# Generate CSV splits (train/val/test) based on current raw_data
-sbatch scripts/run_00_prepare_subdataset.sbatch
+# # Generate CSV splits (train/val/test) based on current raw_data
+# sbatch scripts/run_00_prepare_subdataset.sbatch
 
 # Preprocess (Temporal sampling + Offline Noise -> .pt tensors)
 sbatch scripts/run_01_preprocess_data.sbatch
@@ -121,10 +121,17 @@ scancel JOB_ID
 ```
 
 ## For Development Phase
-- Before running the big `sbatch` jobs for training (02-04), it's a good idea to run a "quicktest" locally to make sure the data loading works:
 ```bash
-export ENV="dev"
-python mains/01_preprocess_data.py  # Run one or two videos locally first
+# init settings
+bash scripts/init_dirs.sh
+cp -r jester_subsampled_data/dev/raw_data/ project_output_resnet_lstm/dev/
+
+# start testing dev scripts
+sbatch scripts/run_01_preprocess_data_cpu.sbatch
+sbatch scripts/run_02_exp1_frozen3d_cpu.sbatch
+sbatch scripts/run_03_exp2_finetune_cpu.sbatch
+sbatch scripts/run_04_exp3_hybrid_cpu.sbatch
+sbatch scripts/run_05_evaluate_models_cpu.sbatch
 ```
 
 ---
