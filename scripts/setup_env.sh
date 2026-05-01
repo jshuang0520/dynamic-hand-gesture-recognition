@@ -9,29 +9,31 @@ handle_error() {
     exit 1
 }
 
-# Trap any errors and route them to the error handler
+# Trap any errors
 trap 'handle_error' ERR
 
-# 1. Load variables securely from .env
+# 1. Load variables from .env
 if [ -f .env ]; then
     set -a
     source .env
     set +a
 else
-    echo "❌ [ERROR] .env file not found in the current directory."
+    echo "❌ [ERROR] .env file not found. Ensure PROJECT_ROOT and ENV_DIR are defined."
     exit 1
 fi
 
-echo "ℹ️ [INFO] Building MSML640 Virtual Environment (Python 3.11)..."
+echo "ℹ️ [INFO] Building Environment at: ${ENV_DIR}"
 
-# 2. Create the virtual environment using the dynamic path
+# 2. Create the virtual environment
 python3.11 -m venv "${ENV_DIR}"
 
-# 3. Install dependencies
-echo "ℹ️ [INFO] Upgrading pip and installing requirements..."
-"${ENV_DIR}/bin/pip" install --upgrade pip
+# 3. Upgrade basic tools
+"${ENV_DIR}/bin/pip" install --upgrade pip setuptools wheel
+
+# 4. Install Requirements
+# The --extra-index-url in the requirements file will now be recognized
+echo "ℹ️ [INFO] Installing packages (this may take several minutes)..."
 "${ENV_DIR}/bin/pip" install -r requirements_hpc.txt
 
-# This will only print if everything succeeded
 echo "✅ [SUCCESS] SHAN Environment is fully built and active!"
 echo "📍 [PATH] Environment installed at: ${ENV_DIR}"
