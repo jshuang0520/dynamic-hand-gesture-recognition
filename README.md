@@ -1,6 +1,8 @@
 # Spatio-Temporal Modeling for Dynamic Hand Gesture Recognition
 
-This repository contains a decoupled, production-grade pipeline for evaluating hand gesture recognition. The project compares a **Hybrid ResNet-50 + LSTM** architecture against **3D ResNet** baselines using an offline-preprocessed subsample of the 20bn-jester-v1 dataset.
+This repository contains a high-performance, decoupled pipeline for evaluating video-based gesture recognition. The project benchmarks a **Hybrid ResNet-50 + LSTM** architecture against **3D ResNet** baselines using the 20bn-jester-v1 dataset.
+
+To ensure 100% scientific reproducibility and bypass the I/O bottlenecks of reading thousands of small JPEG files, this pipeline utilizes **Offline Preprocessing**. Videos are sampled, transformed (noise/pad/crop), and saved as binary tensors before training begins.
 
 ---
 
@@ -8,109 +10,98 @@ This repository contains a decoupled, production-grade pipeline for evaluating h
 
 ```text
 /home/shhuang
-|_ project_output_resnet_lstm        # Shared Output Root (Excluded from Git)
-│   ├── dev/                         # Development Environment
-│   │   ├── raw_data/                # Output of 00: Subsampled .jpg folders
+|_ project_output_resnet_lstm        # Global Output Root (Absolute paths in .env)
+│   ├── dev/                         # Development Environment (GPU enabled)
+│   │   ├── raw_data/                # Output 00: Subsampled .jpg folder structures
 │   │   ├── metadata/
-│   │   │   ├── splits/              # Output of 00: train/val/test CSVs
-│   │   │   ├── data_processed/      # Output of 01: Pre-computed .pt tensors
-│   │   │   └── weights/             # Output of 02, 03, 04: Model checkpoints
-│   │   └── logs/                    # SLURM and training logs
-│   └── prod/                        # Production Environment (Same structure)
+│   │   │   ├── splits/              # Output 00: train.csv, val.csv, test.csv
+│   │   │   └── data_processed/      # Output 01: Pre-computed .pt tensors
+│   │   ├── models/                  # Output 02-04: Trained weight binaries (.pth)
+│   │   └── logs/                    # SLURM and training execution logs
+│   └── prod/                        # Production Environment (Mirror structure)
 │
-|_ dynamic-hand-gesture-recognition  # Project Root (Git-tracked)
-    ├── .env                         # User-specific paths (ENV_DIR, OUTPUT_ROOT)
+|_ dynamic-hand-gesture-recognition  # Project Root (Code)
+    ├── .env                         # User paths (ENV_DIR, OUTPUT_ROOT, etc.)
     ├── configs/
-    │   ├── dev/config.yaml          # GPU-enabled testing parameters
-    │   └── prod/config.yaml         # Production/Full-scale parameters
+    │   ├── dev/config.yaml          # Subsampled testing parameters
+    │   └── prod/config.yaml         # Full-scale production parameters
     ├── scripts/
-    │   ├── setup_env.sh             # Error-handled environment builder
-    │   └── run_0X_...sbatch         # SLURM submission scripts (1-to-1 mapping)
+    │   ├── setup_env.sh             # Environment builder (Python 3.11)
+    │   └── run_0X_...sbatch         # SLURM scripts (1-to-1 mapping with mains/)
     ├── mains/
-    │   ├── 00_prepare_subdataset.py # Task: Subsample & Train/Test Split
-    │   ├── 01_preprocess_data.py    # Task: Offline Noise, Pad, Crop -> .pt Tensors
+    │   ├── 00_prepare_subdataset.py # Subsampling and CSV split generation
+    │   ├── 01_preprocess_data.py    # Temporal sampling and Offline Augmentation
     │   ├── 02_train_exp1_frozen3d.py
     │   ├── 03_train_exp2_finetune.py
-    │   ├── 04_train_exp3_hybrid.py   # Primary Entry Point
-    │   └── 05_evaluate_models.py    # Final Benchmarking
+    │   ├── 04_train_exp3_hybrid.py   # Primary Research Entry Point
+    │   └── 05_evaluate_models.py    # Benchmark and Classification Reports
     ├── src/
     │   ├── data/
-    │   │   ├── loader.py            # Tensor-based PyTorch DataLoader
-    │   │   └── transforms.py        # Offline spatial & noise processing logic
+    │   │   ├── loader.py            # High-speed .pt Tensor DataLoader
+    │   │   └── transforms.py        # Offline Pad/Crop/Noise logic
     │   ├── models/
-    │   │   └── hybrid.py            # Hybrid ResNet50 + LSTM architecture
+    │   │   └── hybrid.py            # Custom ResNet50 + LSTM architecture
     │   └── trainer/
-    │       └── engine.py            # Hardware-agnostic training loop
+    │       └── engine.py            # Hardware-agnostic training loop engine
     └── utilities/
         ├── config_parser.py         # Multi-env YAML & .env parser
-        ├── logger.py                # Timestamped stdout monitoring
+        ├── logger.py                # Timestamped monitoring
         └── reproducibility.py       # Global Seed Locker (20260430)
 ```
 
 ---
 
-## 🚀 Getting Started: Teammate Setup
+## 🚀 Teammate Setup
 
-1. **Build the Environment:** Run this script once to build your Python 3.11 virtual environment using the path defined in your `.env`.
+1. **Initialize Environment:** Build the Python 3.11 venv at the path specified in your `.env`.
     ```bash
     bash scripts/setup_env.sh
     ```
-2. **Configure Paths:** Ensure your `.env` points `OUTPUT_ROOT` to `/home/shhuang/project_output_resnet_lstm`.
+2. **Path Configuration:** - Copy `.env.example` to `.env`.
+    - Set `OUTPUT_ROOT` to `/home/shhuang/project_output_resnet_lstm`.
+    - The pipeline will automatically interpolate these into your config at runtime.
 
 ---
 
-## 🧪 Local/Dev Execution (GPU Enabled)
+## ⚡ Execution Pipeline (00-05 Workflow)
 
-In this version, even the `dev` environment is configured for GPU execution. The `dev` config uses the subsampled `raw_data` to ensure rapid iteration.
+Submit these jobs in sequence. Each stage generates the required inputs for the next.
 
-**Primary Entry Point:** `mains/04_train_exp3_hybrid.py`
-> **What this does:** Loads pre-processed tensors from `metadata/data_processed` and trains the Hybrid model. Since the heavy lifting (resizing/noise) is already done in Step 01, training is significantly faster.
-
-**Execution Command:**
-```bash
-export ENV="dev"
-python mains/04_train_exp3_hybrid.py
-```
-
----
-
-## ⚡ HPC Deployment (Zaratan Production)
-
-Follow this sequence to execute the full pipeline. All SLURM scripts route logs to `project_output_resnet_lstm/[env]/logs`.
-
-1. **Prepare Subdataset (Task 1):** Subsamples original Jester data into `raw_data` and creates CSV splits.
+### Phase 1: Data Preparation
+1. **Subsampling (Step 00):** Extracts a manageable subset of the Jester dataset and generates splits.
     ```bash
     sbatch scripts/run_00_prepare_subdataset.sbatch
     ```
-
-2. **Preprocess Data (Offline Augmentation):** Reads JPGs from `raw_data`, applies padding, cropping, and noise, then saves as binary `.pt` files.
+2. **Preprocessing (Step 01):** - **Temporal Sampling:** Uses uniform distribution (linspace) to capture the full gesture motion into 16 frames.
+   - **Offline Augmentation:** Applies padding, center-cropping, and Gaussian noise.
+   - **Binary I/O:** Saves results as `.pt` files for ultra-fast GPU training.
     ```bash
     sbatch scripts/run_01_preprocess_data.sbatch
     ```
 
-3. **Train Baseline 1: Frozen 3D ResNet:**
+### Phase 2: Training Experiments
+3. **Experiment 1 (Frozen 3D ResNet):** Trains only the classification head.
     ```bash
     sbatch scripts/run_02_train_exp1_frozen3d.sbatch
     ```
-
-4. **Train Baseline 2: Fine-Tuned 3D ResNet:**
+4. **Experiment 2 (Fine-Tuned 3D ResNet):** Updates the entire 3D backbone.
     ```bash
     sbatch scripts/run_03_train_exp2_finetune.sbatch
     ```
-
-5. **Train Proposed Model: Hybrid ResNet+LSTM:**
+5. **Experiment 3 (Hybrid ResNet+LSTM):** Evaluates the proposed spatial-temporal architecture.
     ```bash
     sbatch scripts/run_04_train_exp3_hybrid.sbatch
     ```
 
-6. **Evaluate Models:** Benchmarks accuracy, precision, and F1-score across all experiments.
+### Phase 3: Benchmarking
+6. **Evaluation (Step 05):** Pulls best weights from `dev/models/` (as defined in `config.yaml`) and generates comparative metrics.
     ```bash
     sbatch scripts/run_05_evaluate_models.sbatch
     ```
 
 ---
 
-## 🛠 Features for Reproducibility
-- **Fixed Noise:** Moving noise addition to `01_preprocess_data.py` ensures all models see identical input data.
-- **Binary I/O:** Reading `.pt` tensors from the `metadata` directory bypasses the bottleneck of decoding thousands of small `.jpg` files during training.
-- **Universal Seed:** Global seed `20260430` is enforced across all five pipeline stages.
+## 🛠 Core Features
+- **Deterministic Experiments:** Moving noise and transforms to the offline Step 01 ensures every model sees the exact same pixels.
+- **Dynamic Temporal Sampling:** Video length varies in Jester; our sampler ensures the model always receives 16 frames representing the full duration of the action.
+- **Zero-Hardcode Policy:** All paths (input, output, weights, logs) are dynamically generated using `.env` variables and YAML configuration.
