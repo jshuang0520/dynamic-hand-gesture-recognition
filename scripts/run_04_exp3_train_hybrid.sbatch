@@ -33,7 +33,7 @@ else
 fi
 
 # --- 3. Configuration & Hardware Check ---
-SCRIPT_NAME="04_exp3_train_hybrids.py"
+SCRIPT_NAME="04_exp3_train_hybrid.py"
 export ENV="prod"
 
 echo "ℹ️ [INFO] Initializing SLURM Job: ${SCRIPT_NAME}"
