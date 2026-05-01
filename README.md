@@ -82,19 +82,23 @@ sbatch scripts/run_01_preprocess_data_cpu.sbatch
 ### 2. Model Training Experiments
 ```bash
 # Train Baseline 1 (Frozen 3D ResNet)
-sbatch scripts/run_02_train_exp1_frozen3d.sbatch
+sbatch scripts/run_02_exp1_frozen3d.sbatch
+sbatch scripts/run_02_exp1_frozen3d_cpu.sbatch
 
 # Train Baseline 2 (Fine-tuned 3D ResNet)
-sbatch scripts/run_03_train_exp2_finetune.sbatch
+sbatch scripts/run_03_exp2_finetune.sbatch
+sbatch scripts/run_03_exp2_finetune_cpu.sbatch
 
 # Train Proposed Model (Hybrid ResNet+LSTM)
-sbatch scripts/run_04_train_exp3_hybrid.sbatch
+sbatch scripts/run_04_exp3_hybrid.sbatch
+sbatch scripts/run_04_exp3_hybrid_cpu.sbatch
 ```
 
 ### 3. Final Evaluation
 ```bash
 # Benchmark all models and generate classification reports
 sbatch scripts/run_05_evaluate_models.sbatch
+sbatch scripts/run_05_evaluate_models_cpu.sbatch
 ```
 
 ## Monitoring Jobs

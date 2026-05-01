@@ -7,10 +7,10 @@ from src.data.loader import get_loaders
 from src.trainer.engine import Trainer
 from src.models.hybrid import HybridResNetLSTM
 
-logger = get_logger("04_EXP3")
 
 if __name__ == "__main__":
     cfg = load_config()
+    logger = get_logger("04_EXP3", log_dir=cfg['paths']['logs_dir'])
     train_loader, val_loader = get_loaders(cfg)
     
     model = HybridResNetLSTM(num_classes=cfg['experiment']['num_classes'])

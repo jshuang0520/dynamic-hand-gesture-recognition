@@ -7,7 +7,8 @@ from src.data.loader import get_loaders
 from src.models.hybrid import HybridResNetLSTM
 from torchvision.models.video import r3d_18
 
-logger = get_logger("05_EVAL")
+cfg = load_config()
+logger = get_logger("05_EVAL", log_dir=cfg['paths']['logs_dir'])
 
 def run_evaluation():
     cfg = load_config()
