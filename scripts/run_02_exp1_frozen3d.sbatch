@@ -5,25 +5,30 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
 #SBATCH --time=04:00:00
-#SBATCH --output=/home/%u/project_output_resnet_lstm/prod/logs/02_exp1-%j.out
+#SBATCH --output=/home/%u/scratch.msml640/project_output_resnet_lstm/prod/logs/02_exp1-%j.out
 
 set -e
 
+# --- Define which environment we are running ---
+# Change this to "dev" when you want to run the micro-test!
+TARGET_ENV="prod" 
+
 # --- 1. Load and Clean Environment ---
-if [ -f .env ]; then
-    set -a; source .env; set +a
+ENV_FILE=".env.${TARGET_ENV}"
+
+if [ -f "$ENV_FILE" ]; then
+    echo "ℹ️ [INFO] Loading environment variables from $ENV_FILE"
+    set -a; source "$ENV_FILE"; set +a
 else
-    echo "❌ ERROR: .env file missing in $(pwd)"
+    echo "❌ ERROR: Environment file $ENV_FILE missing in $(pwd)"
     exit 1
 fi
 
-# Clean paths (strips hidden characters/carriage returns)
 ENV_DIR_CLEAN=$(echo "${ENV_DIR}" | tr -d '\r' | xargs)
 PROJECT_ROOT_CLEAN=$(echo "${PROJECT_ROOT}" | tr -d '\r' | xargs)
 
 # --- 2. Activate Virtual Environment ---
 ACTIVATE_PATH="${ENV_DIR_CLEAN}/bin/activate"
-
 if [ -f "$ACTIVATE_PATH" ]; then
     source "$ACTIVATE_PATH"
     export PYTHONPATH="${PROJECT_ROOT_CLEAN}:${PYTHONPATH}"
@@ -33,16 +38,15 @@ else
 fi
 
 # --- 3. Configuration & Hardware Check ---
-SCRIPT_NAME="02_exp1_frozen3d.py"
-export ENV="prod"
+SCRIPT_NAME="02_train_exp1_frozen3d.py"
 
-echo "ℹ️ [INFO] Initializing SLURM Job: ${SCRIPT_NAME}"
-echo "🙂 [INFO] Environment active. Checking Hardware..."
+# --- CRITICAL FIX: MOVE TO PROJECT ROOT ---
+cd "$PROJECT_ROOT_CLEAN"
 
-# Hardware check (Optional but good for GPU jobs)
-nvidia-smi || echo "⚠️ Warning: nvidia-smi failed, checking execution anyway..."
+echo "ℹ️ [INFO] Initializing SLURM Job: ${SCRIPT_NAME} in ${TARGET_ENV^^} mode"
+nvidia-smi || echo "⚠️ Warning: nvidia-smi failed"
 
 # --- 4. Execution ---
 srun -u python "mains/${SCRIPT_NAME}"
 
-echo "✅ [SUCCESS] SLURM Job Complete: Experiment 1."
+echo "✅ [SUCCESS] SLURM Job Complete."
