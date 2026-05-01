@@ -1,0 +1,22 @@
+experiment:
+  seed: 20260430
+  num_classes: 4
+  target_classes:
+    - "Stop Sign"
+    - "Swiping Left"
+    - "Sliding Two Fingers Down"
+    - "Thumbs Up"
+  frames_per_video: 16
+  batch_size: 16        # Maximize H100 memory
+  learning_rate: 0.0001
+  quick_test: false     # Full training loop
+  execution_mode: "gpu" # Enforce GPU usage
+
+data_splits:
+  train_per_class: 400
+  val_per_class: 50
+  test_per_class: 50
+
+paths:
+  dataset_dir: "${DATA_ROOT}/jester_uncompressed"
+  weights_dir: "${SHAN_PROJECT_DIR}/weights"

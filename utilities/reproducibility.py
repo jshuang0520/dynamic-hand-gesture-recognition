@@ -4,9 +4,10 @@ import numpy as np
 import torch
 from utilities.logger import get_logger
 
-log = get_logger("REPRODUCIBILITY")
+logger = get_logger("REPRODUCIBILITY")
 
 def lock_seeds(seed=20260430):
+    """Secures random states across all libraries for determinism."""
     os.environ['PYTHONHASHSEED'] = str(seed)
     random.seed(seed)
     np.random.seed(seed)
@@ -16,4 +17,4 @@ def lock_seeds(seed=20260430):
         torch.cuda.manual_seed_all(seed)
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
-    log(f"Universal random seed locked to {seed}")
+    logger(f"Universal random seed locked to {seed}")

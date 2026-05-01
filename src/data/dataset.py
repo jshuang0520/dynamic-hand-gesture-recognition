@@ -7,19 +7,16 @@ import torchvision.transforms as T
 from src.data.transforms import JesterAugmenter
 from utilities.logger import get_logger
 
-log = get_logger("DATALOADER")
+logger = get_logger("DATALOADER")
 
 class JesterDataset(Dataset):
+    """PyTorch Dataset for loading sequential video frames."""
     def __init__(self, csv_path, frames_dir, target_classes, num_frames=16, is_train=True):
         self.frames_dir = frames_dir
         self.num_frames = num_frames
-        self.is_train = is_train
         self.data = pd.read_csv(csv_path)
-        
-        # Map class names to integers (0, 1, 2, 3)
         self.class_to_idx = {cls_name: i for i, cls_name in enumerate(target_classes)}
         
-        # Base transforms for ImageNet-style models
         self.resize = T.Compose([
             T.Resize((224, 224)),
             T.ToTensor(),
@@ -37,7 +34,7 @@ class JesterDataset(Dataset):
         
         vid_dir = os.path.join(self.frames_dir, vid_id)
         
-        # Fallback for missing frames (returns zeros if directory is empty/missing)
+        # --- Handle Missing Data Gracefully ---
         if not os.path.exists(vid_dir):
             return torch.zeros((self.num_frames, 3, 224, 224)), label_idx
             
@@ -45,28 +42,22 @@ class JesterDataset(Dataset):
         if len(frame_files) == 0:
             return torch.zeros((self.num_frames, 3, 224, 224)), label_idx
 
-        # Uniformly sample N frames
+        # --- Uniform Frame Sampling ---
         indices = torch.linspace(0, len(frame_files) - 1, self.num_frames).long()
+        frames = [self.resize(Image.open(os.path.join(vid_dir, frame_files[i])).convert('RGB')) for i in indices]
         
-        frames = []
-        for i in indices:
-            img_path = os.path.join(vid_dir, frame_files[i])
-            img = Image.open(img_path).convert('RGB')
-            frames.append(self.resize(img))
-            
-        # Stack frames: Shape -> [Frames, Channels, Height, Width]
         video_tensor = torch.stack(frames)
-        
         if self.augmenter:
             video_tensor = self.augmenter(video_tensor)
             
         return video_tensor, label_idx
 
 def build_dataloader(base_dir, split, config, is_train=True):
+    """Helper factory for clean dataloader initialization."""
     csv_path = os.path.join(base_dir, "jester_splits", f"{split}.csv")
     frames_dir = os.path.join(base_dir, "jester_subsample")
     
-    log(f"Mounting {split} dataset from {csv_path}")
+    logger(f"Mounting {split} dataset from {csv_path}")
     dataset = JesterDataset(
         csv_path=csv_path,
         frames_dir=frames_dir,

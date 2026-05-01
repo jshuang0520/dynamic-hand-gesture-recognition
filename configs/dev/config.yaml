@@ -1,0 +1,22 @@
+experiment:
+  seed: 20260430
+  num_classes: 4
+  target_classes:
+    - "Stop Sign"
+    - "Swiping Left"
+    - "Sliding Two Fingers Down"
+    - "Thumbs Up"
+  frames_per_video: 16
+  batch_size: 4         # Small batch for local RAM
+  learning_rate: 0.0001
+  quick_test: true      # Truncates loops
+  execution_mode: "cpu" # Default to CPU for local dev
+
+data_splits:
+  train_per_class: 8
+  val_per_class: 1
+  test_per_class: 1
+
+paths:
+  dataset_dir: "${DATA_ROOT}/jester_data_for_dev"
+  weights_dir: "${SHAN_PROJECT_DIR}/weights_dev"
