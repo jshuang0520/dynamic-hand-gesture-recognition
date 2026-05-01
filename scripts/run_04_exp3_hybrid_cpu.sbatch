@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=16        # Maximize parallel data loading/processing
 #SBATCH --mem=64G                 # Generous memory for batch handling
 #SBATCH --time=24:00:00           # Massive time bump for CPU backpropagation
-#SBATCH --output=/scratch/zt-msml640/user/%u/project_output_resnet_lstm/dev/logs/04_exp3-cpu-%j.out
+#SBATCH --output=/home/%u/project_output_resnet_lstm/dev/logs/04_exp3-cpu-%j.out
 
 
 set -e

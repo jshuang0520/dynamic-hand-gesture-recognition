@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
 #SBATCH --time=02:00:00
-#SBATCH --output=/home/%u/shan_project/slurm_logs/05_eval-%j.out
+#SBATCH --output=/home/%u/project_output_resnet_lstm/dev/logs/05_eval-%j.out
 
 set -e
 
