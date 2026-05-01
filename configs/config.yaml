@@ -1,14 +1,19 @@
 experiment:
-  # Universal Seed for complete reproducibility across ETL, Training, and Eval
   seed: 20260430
   num_classes: 4
+  target_classes:
+    - "Stop Sign"
+    - "Swiping Left"
+    - "Sliding Two Fingers Down"
+    - "Thumbs Up"
+  frames_per_video: 16
   batch_size: 16
   learning_rate: 0.0001
-  quick_test: true       # Set to false for the production HPC run
+  quick_test: false
   execution_mode: "gpu"
 
 paths:
-  # Dynamically expanded by the parser using the .env file
-  frames_dir: "${RAW_DATA_DIR}"
-  splits_dir: "${SHAN_PROJECT_DIR}/data/splits/"
-  weights_dir: "${SHAN_PROJECT_DIR}/weights/"
+  original_raw_dir: "${RAW_ORIGINAL_JESTER_DIR}"
+  full_dataset_dir: "${DATA_ROOT}/jester_uncompressed"
+  dev_dataset_dir: "${DATA_ROOT}/jester_data_for_dev"
+  weights_dir: "${SHAN_PROJECT_DIR}/weights"

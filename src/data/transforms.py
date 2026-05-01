@@ -2,11 +2,11 @@ import random
 import torch
 import torchvision.transforms.functional as F
 
-class NoiseAugmenter:
+class JesterAugmenter:
     def __init__(self, severity=0.5):
         self.severity = severity
 
-    def apply(self, tensor_frames):
+    def __call__(self, tensor_frames):
         """Applies online Gaussian noise, contrast variations, and padding crops."""
         if random.random() > self.severity: return tensor_frames
             

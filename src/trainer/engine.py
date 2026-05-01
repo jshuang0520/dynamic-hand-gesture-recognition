@@ -1,4 +1,7 @@
 import torch
+from utilities.logger import get_logger
+
+log = get_logger("TRAINER")
 
 class Trainer:
     def __init__(self, model, train_loader, val_loader, optimizer, criterion, quick_test=False):
@@ -9,11 +12,11 @@ class Trainer:
         self.criterion = criterion
         self.quick_test = quick_test
         if self.quick_test:
-            print("[WARNING] QUICK_TEST is ENABLED. Truncating loops.")
+            log("QUICK_TEST is ENABLED. Truncating loops to 2 batches.", "WARNING")
 
     def run(self, mode="gpu", epochs=10):
         device = torch.device("cuda:0" if mode == "gpu" and torch.cuda.is_available() else "cpu")
-        print(f"[INFO] Hardware selected: {device}")
+        log(f"Hardware allocated: {device}")
         
         self.model.to(device)
         actual_epochs = 1 if self.quick_test else epochs
@@ -33,6 +36,7 @@ class Trainer:
                 self.optimizer.step()
                 train_loss += loss.item()
                 
-            print(f"[EPOCH {epoch}/{actual_epochs}] Train Loss: {train_loss / (batch_idx + 1):.4f}")
+            log(f"[EPOCH {epoch}/{actual_epochs}] Train Loss: {train_loss / (batch_idx + 1):.4f}")
             
+        log("Training phase complete.")
         return self.model
