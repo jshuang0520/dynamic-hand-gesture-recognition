@@ -138,6 +138,56 @@ sbatch scripts/run_02_exp1_frozen3d_cpu.sbatch
 sbatch scripts/run_03_exp2_finetune3d_cpu.sbatch
 sbatch scripts/run_04_exp3_train_hybrid_cpu.sbatch
 sbatch scripts/run_05_evaluate_models_cpu.sbatch
+
+# prod run
+sbatch scripts/run_01_preprocess_data.sbatch && \
+sbatch scripts/run_02_exp1_frozen3d.sbatch && \
+sbatch scripts/run_03_exp2_finetune3d.sbatch && \
+sbatch scripts/run_04_exp3_train_hybrid.sbatch && \
+sbatch scripts/run_05_evaluate_models.sbatch
+
+login-1:~$ find project_output_resnet_lstm/ -type d | awk -F/ 'count[$(NF-1)]++ < 10' | sed -e 's/[^-][^\/]*\//--/g' -e 's/^/ /' -e 's/-/|/'
+
+ project_output_resnet_lstm
+ |-
+ |-dev
+ |---models
+ |---metadata
+ |-----data_processed
+ |---logs
+ |---raw_data
+ |-----annotations
+ |-----videos
+ |-------train
+ |---------72057
+ |---------134871
+ |---------23472
+ |---------1086
+ |---------21313
+ |---------116268
+ |---------140191
+ |---------9808
+ |-------val
+ |---------33871
+ |---------73400
+ |---------124343
+ |---------1037
+ |-------test
+ |---------108558
+ |---------142573
+ |---------52722
+ |---------49884
+ |-prod
+ |---models
+ |---metadata
+ |-----data_processed
+ |---logs
+ |---raw_data
+ |-----annotations
+ |-----videos
+ |-------train
+ |-------val
+ |-------test
 ```
 
 ---

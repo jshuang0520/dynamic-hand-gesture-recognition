@@ -36,7 +36,7 @@ else
 fi
 
 # --- 3. HPC Execution Config ---
-export ENV="dev"
+export ENV="prod"
 echo "🙂 [INFO] Environment active. Running 00_prepare_subdataset.py..."
 
 # --- 4. Execution ---

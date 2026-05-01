@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
 #SBATCH --time=08:00:00
-#SBATCH --output=/home/%u/project_output_resnet_lstm/dev/logs/03_exp2-%j.out
+#SBATCH --output=/home/%u/project_output_resnet_lstm/prod/logs/03_exp2-%j.out
 
 set -e
 
@@ -34,7 +34,7 @@ fi
 
 # --- 3. Configuration & Hardware Check ---
 SCRIPT_NAME="03_exp2_finetune3d.py"
-export ENV="dev"
+export ENV="prod"
 
 echo "ℹ️ [INFO] Initializing SLURM Job: ${SCRIPT_NAME}"
 echo "🙂 [INFO] Environment active. Checking Hardware..."
