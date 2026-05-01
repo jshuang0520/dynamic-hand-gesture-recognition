@@ -1,35 +1,29 @@
 experiment:
-  seed: 20260430
+  # Using today's date in Greenbelt as the seed for good luck
+  seed: 20260501
   num_classes: 4
   target_classes: ["Stop Sign", "Swiping Left", "Sliding Two Fingers Down", "Thumbs Up"]
   frames_per_video: 16
-  batch_size: 4
+  batch_size: 2          # LOWERED: To accommodate the micro-dataset size
   learning_rate: 0.0001
-  num_epochs: 10
-  quick_test: true
+  num_epochs: 3          # LOWERED: 3 epochs is enough to verify the loop doesn't crash
   execution_mode: "gpu"
 
+# The Micro-Split Configuration
 data_splits:
-  train_per_class: 8
-  val_per_class: 2
-  test_per_class: 2
+  train_per_class: 2     # 2 * 4 classes = 8 total train videos
+  val_per_class: 1       # 1 * 4 classes = 4 total val videos
+  test_per_class: 1      # 1 * 4 classes = 4 total test videos
 
 paths:
-  original_raw_dir: "${RAW_ORIGINAL_JESTER_DIR}"
+  # The updated symmetric structure
+  raw_data_dir: "${OUTPUT_ROOT}/${ENV}/raw_data"
+  annotations_dir: "${OUTPUT_ROOT}/${ENV}/raw_data/annotations"
+  videos_dir: "${OUTPUT_ROOT}/${ENV}/raw_data/videos"
   
-  # --- NEW RAW DATA STRUCTURE ---
-  raw_data_dir: "${OUTPUT_ROOT}/dev/raw_data"
-  annotations_dir: "${OUTPUT_ROOT}/dev/raw_data/annotations"
-  videos_dir: "${OUTPUT_ROOT}/dev/raw_data/videos"
+  metadata_dir: "${OUTPUT_ROOT}/${ENV}/metadata"
+  processed_dir: "${OUTPUT_ROOT}/${ENV}/metadata/data_processed"
   
-  # --- METADATA & OUTPUTS ---
-  metadata_dir: "${OUTPUT_ROOT}/dev/metadata"
-  processed_dir: "${OUTPUT_ROOT}/dev/metadata/data_processed"
-  weights_dir: "${OUTPUT_ROOT}/dev/models"
-  logs_dir: "${OUTPUT_ROOT}/dev/logs"
-
-evaluation:
-  model_weights:
-    exp1: "${OUTPUT_ROOT}/dev/models/exp1_frozen_best.pth"
-    exp2: "${OUTPUT_ROOT}/dev/models/exp2_finetune_best.pth"
-    exp3: "${OUTPUT_ROOT}/dev/models/exp3_hybrid_best.pth"
+  # Models and Logs
+  weights_dir: "${OUTPUT_ROOT}/${ENV}/models"
+  logs_dir: "${OUTPUT_ROOT}/${ENV}/logs"

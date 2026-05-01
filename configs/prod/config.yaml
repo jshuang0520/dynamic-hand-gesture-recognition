@@ -1,22 +1,28 @@
 experiment:
-  seed: 20260430
+  seed: 20260501
   num_classes: 4
-  target_classes:
-    - "Stop Sign"
-    - "Swiping Left"
-    - "Sliding Two Fingers Down"
-    - "Thumbs Up"
+  target_classes: ["Stop Sign", "Swiping Left", "Sliding Two Fingers Down", "Thumbs Up"]
   frames_per_video: 16
-  batch_size: 16        # Maximize H100 memory
+  batch_size: 8
   learning_rate: 0.0001
-  quick_test: false     # Full training loop
-  execution_mode: "gpu" # Enforce GPU usage
+  num_epochs: 15
+  execution_mode: "gpu"
 
+# Aligned with Proposal Section 3 (80/10/10 split of 2000 total videos)
 data_splits:
   train_per_class: 400
   val_per_class: 50
   test_per_class: 50
 
 paths:
-  dataset_dir: "${DATA_ROOT}/jester_uncompressed"
-  weights_dir: "${SHAN_PROJECT_DIR}/weights"
+  # The updated symmetric structure
+  raw_data_dir: "${OUTPUT_ROOT}/${ENV}/raw_data"
+  annotations_dir: "${OUTPUT_ROOT}/${ENV}/raw_data/annotations"
+  videos_dir: "${OUTPUT_ROOT}/${ENV}/raw_data/videos"
+  
+  metadata_dir: "${OUTPUT_ROOT}/${ENV}/metadata"
+  processed_dir: "${OUTPUT_ROOT}/${ENV}/metadata/data_processed"
+  
+  # Models go here!
+  weights_dir: "${OUTPUT_ROOT}/${ENV}/models"
+  logs_dir: "${OUTPUT_ROOT}/${ENV}/logs"
