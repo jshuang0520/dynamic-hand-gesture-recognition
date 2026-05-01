@@ -1,18 +1,19 @@
 experiment:
+  # Using today's date in Greenbelt as the seed for good luck
   seed: 20260501
   num_classes: 4
-  target_classes: ["Stop Sign", "Swiping Left", "Sliding Two Fingers Down", "Thumbs Up"]
+  target_classes: ["Stop Sign", "Swiping Left", "Sliding Two Fingers Down", "Thumb Down"]
   frames_per_video: 16
   batch_size: 8
   learning_rate: 0.0001
   num_epochs: 15
   execution_mode: "gpu"
 
-# Aligned with Proposal Section 3 (80/10/10 split of 2000 total videos)
+# The Micro-Split Configuration
 data_splits:
-  train_per_class: 400
-  val_per_class: 50
-  test_per_class: 50
+  train_per_class: 400     # 400 * 4 classes = 1600 total train videos
+  val_per_class: 50        # 50 * 4 classes  = 200  total val videos
+  test_per_class: 50       # 50 * 4 classes  = 200  total test videos
 
 paths:
   # The updated symmetric structure
@@ -23,6 +24,6 @@ paths:
   metadata_dir: "${OUTPUT_ROOT}/${ENV}/metadata"
   processed_dir: "${OUTPUT_ROOT}/${ENV}/metadata/data_processed"
   
-  # Models go here!
+  # Models and Logs
   weights_dir: "${OUTPUT_ROOT}/${ENV}/models"
   logs_dir: "${OUTPUT_ROOT}/${ENV}/logs"
