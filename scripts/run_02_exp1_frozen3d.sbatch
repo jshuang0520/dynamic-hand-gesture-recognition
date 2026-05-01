@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#SBATCH --job-name=01_exp1_frozen
+#SBATCH --job-name=01_exp1
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:h100:1
 #SBATCH --cpus-per-task=8
@@ -7,46 +7,42 @@
 #SBATCH --time=04:00:00
 #SBATCH --output=/home/%u/scratch.msml640/project_output_resnet_lstm/prod/logs/02_exp1-%j.out
 
-set -e
+set -euo pipefail
 
-# --- Define which environment we are running ---
-# Change this to "dev" when you want to run the micro-test!
-TARGET_ENV="prod" 
+# 1. Navigate to the folder you submitted this from (Project Root)
+cd "$SLURM_SUBMIT_DIR"
 
-# --- 1. Load and Clean Environment ---
-ENV_FILE=".env.${TARGET_ENV}"
-
-if [ -f "$ENV_FILE" ]; then
-    echo "ℹ️ [INFO] Loading environment variables from $ENV_FILE"
-    set -a; source "$ENV_FILE"; set +a
+# 2. Load the .env file dynamically
+if [ -f ".env" ]; then
+    echo "ℹ️ [INFO] Loading .env file..."
+    set -a; source .env; set +a
 else
-    echo "❌ ERROR: Environment file $ENV_FILE missing in $(pwd)"
+    echo "❌ ERROR: .env file missing in $(pwd)"
     exit 1
 fi
 
+# Clean the path just in case of hidden carriage returns
 ENV_DIR_CLEAN=$(echo "${ENV_DIR}" | tr -d '\r' | xargs)
-PROJECT_ROOT_CLEAN=$(echo "${PROJECT_ROOT}" | tr -d '\r' | xargs)
 
-# --- 2. Activate Virtual Environment ---
+# 3. Activate environment dynamically
 ACTIVATE_PATH="${ENV_DIR_CLEAN}/bin/activate"
 if [ -f "$ACTIVATE_PATH" ]; then
     source "$ACTIVATE_PATH"
-    export PYTHONPATH="${PROJECT_ROOT_CLEAN}:${PYTHONPATH}"
+    export PYTHONPATH="$SLURM_SUBMIT_DIR:${PYTHONPATH}"
+    echo "✅ [SUCCESS] Virtual environment activated at $ENV_DIR_CLEAN"
 else
     echo "❌ ERROR: Cannot find virtualenv at: $ACTIVATE_PATH"
     exit 1
 fi
 
-# --- 3. Configuration & Hardware Check ---
-SCRIPT_NAME="02_train_exp1_frozen3d.py"
+# 4. Tell Python we want the PROD config
+export ENV="prod"
 
-# --- CRITICAL FIX: MOVE TO PROJECT ROOT ---
-cd "$PROJECT_ROOT_CLEAN"
+# 5. Check hardware
+echo "ℹ️ [INFO] Starting Experiment 1 Training..."
+nvidia-smi || true
 
-echo "ℹ️ [INFO] Initializing SLURM Job: ${SCRIPT_NAME} in ${TARGET_ENV^^} mode"
-nvidia-smi || echo "⚠️ Warning: nvidia-smi failed"
-
-# --- 4. Execution ---
-srun -u python "mains/${SCRIPT_NAME}"
+# 6. Run the script
+srun -u python3 mains/02_exp1_frozen3d.py
 
 echo "✅ [SUCCESS] SLURM Job Complete."

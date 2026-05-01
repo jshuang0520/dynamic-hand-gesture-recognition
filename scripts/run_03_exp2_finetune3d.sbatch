@@ -5,49 +5,44 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
 #SBATCH --time=08:00:00
-# --- CRITICAL FIX: Logs go to scratch! ---
-#SBATCH --output=/home/%u/scratch.msml640/project_output_resnet_lstm/dev/logs/03_exp2-%j.out
+#SBATCH --output=/home/%u/scratch.msml640/project_output_resnet_lstm/prod/logs/03_exp2-%j.out
 
-set -e
+set -euo pipefail
 
-# --- Define Environment ---
-# Change to "prod" for the 2000-video run!
-TARGET_ENV="dev" 
+# 1. Navigate to Project Root
+cd "$SLURM_SUBMIT_DIR"
 
-# --- 1. Load Environment ---
-ENV_FILE=".env.${TARGET_ENV}"
-
-if [ -f "$ENV_FILE" ]; then
-    echo "ℹ️ [INFO] Loading environment variables from $ENV_FILE"
-    set -a; source "$ENV_FILE"; set +a
+# 2. Load .env dynamically
+if [ -f ".env" ]; then
+    echo "ℹ️ [INFO] Loading .env file..."
+    set -a; source .env; set +a
 else
-    echo "❌ ERROR: Environment file $ENV_FILE missing in $(pwd)"
+    echo "❌ ERROR: .env file missing in $(pwd)"
     exit 1
 fi
 
+# Clean path
 ENV_DIR_CLEAN=$(echo "${ENV_DIR}" | tr -d '\r' | xargs)
-PROJECT_ROOT_CLEAN=$(echo "${PROJECT_ROOT}" | tr -d '\r' | xargs)
 
-# --- 2. Activate Virtual Environment ---
+# 3. Activate virtual environment
 ACTIVATE_PATH="${ENV_DIR_CLEAN}/bin/activate"
 if [ -f "$ACTIVATE_PATH" ]; then
     source "$ACTIVATE_PATH"
-    export PYTHONPATH="${PROJECT_ROOT_CLEAN}:${PYTHONPATH}"
+    export PYTHONPATH="$SLURM_SUBMIT_DIR:${PYTHONPATH}"
+    echo "✅ [SUCCESS] Virtual environment activated at $ENV_DIR_CLEAN"
 else
     echo "❌ ERROR: Cannot find virtualenv at: $ACTIVATE_PATH"
     exit 1
 fi
 
-# --- 3. Configuration & Hardware Check ---
-SCRIPT_NAME="03_train_exp2_finetune.py"
+# 4. Target Environment
+export ENV="prod"
 
-# --- CRITICAL FIX: MOVE TO PROJECT ROOT ---
-cd "$PROJECT_ROOT_CLEAN"
+# 5. Check hardware
+echo "ℹ️ [INFO] Starting Experiment 2 Fine-Tuning..."
+nvidia-smi || true
 
-echo "ℹ️ [INFO] Initializing SLURM Job: ${SCRIPT_NAME} in ${TARGET_ENV^^} mode"
-nvidia-smi || echo "⚠️ Warning: nvidia-smi failed"
-
-# --- 4. Execution ---
-srun -u python "mains/${SCRIPT_NAME}"
+# 6. Execute Python Script
+srun -u python3 mains/03_train_exp2_finetune.py
 
 echo "✅ [SUCCESS] SLURM Job Complete: Experiment 2."
