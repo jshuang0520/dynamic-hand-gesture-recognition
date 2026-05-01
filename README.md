@@ -10,15 +10,19 @@ To ensure 100% scientific reproducibility and bypass the I/O bottlenecks of read
 
 ```text
 /home/shhuang
-|_ project_output_resnet_lstm        # Global Output Root (Absolute paths in .env)
-│   ├── dev/                         # Development Environment (GPU enabled)
-│   │   ├── raw_data/                # Output 00: Subsampled .jpg folder structures
-│   │   ├── metadata/
-│   │   │   ├── splits/              # Output 00: train.csv, val.csv, test.csv
-│   │   │   └── data_processed/      # Output 01: Pre-computed .pt tensors
-│   │   ├── models/                  # Output 02-04: Trained weight binaries (.pth)
-│   │   └── logs/                    # SLURM and training execution logs
-│   └── prod/                        # Production Environment (Mirror structure)
+project_output_resnet_lstm/               # Global Output Root (Absolute paths in .env)
+├── dev/                                  # Development Environment (GPU enabled)
+│   ├── logs/                             # SLURM and training execution logs
+│   ├── raw_data/
+│   │   ├── annotations/                  # Output 00: train.csv, val.csv, test.csv
+│   │   └── videos/
+│   │       ├── train/                    # 1086/ (contains .jpg frames)
+│   │       ├── val/                      # 1037/ (contains .jpg frames)
+│   │       └── test/                     # 49884/ (contains .jpg frames)
+│   ├── metadata/
+│   │   └── data_processed/               # Output 01: Pre-computed .pt tensors (e.g. noise/cropping)
+│   └── models/                           # Output 02-04: Trained weight binaries (.pth) for ResNet-3D-18, Finetuned ResNet-3D-18, and Hybrid
+└── prod/                                 # Production Environment (Mirror structure)
 │
 |_ dynamic-hand-gesture-recognition  # Project Root (Code)
     ├── .env                         # User paths (ENV_DIR, OUTPUT_ROOT, etc.)
@@ -32,9 +36,9 @@ To ensure 100% scientific reproducibility and bypass the I/O bottlenecks of read
     ├── mains/
     │   ├── 00_prepare_subdataset.py # Subsampling and CSV split generation
     │   ├── 01_preprocess_data.py    # Temporal sampling and Offline Augmentation
-    │   ├── 02_train_exp1_frozen3d.py
-    │   ├── 03_train_exp2_finetune.py
-    │   ├── 04_train_exp3_hybrid.py   # Primary Research Entry Point
+    │   ├── 02_exp1_frozen3d.py
+    │   ├── 03_exp2_finetune3d.py
+    │   ├── 04_exp3_train_hybrid.py  # Primary Research Entry Point
     │   └── 05_evaluate_models.py    # Benchmark and Classification Reports
     ├── src/
     │   ├── data/
@@ -86,12 +90,12 @@ sbatch scripts/run_02_exp1_frozen3d.sbatch
 sbatch scripts/run_02_exp1_frozen3d_cpu.sbatch
 
 # Train Baseline 2 (Fine-tuned 3D ResNet)
-sbatch scripts/run_03_exp2_finetune.sbatch
-sbatch scripts/run_03_exp2_finetune_cpu.sbatch
+sbatch scripts/run_03_exp2_finetune3d.sbatch
+sbatch scripts/run_03_exp2_finetune3d_cpu.sbatch
 
 # Train Proposed Model (Hybrid ResNet+LSTM)
-sbatch scripts/run_04_exp3_hybrid.sbatch
-sbatch scripts/run_04_exp3_hybrid_cpu.sbatch
+sbatch scripts/run_04_exp3_train_hybrid.sbatch
+sbatch scripts/run_04_exp3_train_hybrid_cpu.sbatch
 ```
 
 ### 3. Final Evaluation
@@ -129,8 +133,8 @@ cp -r jester_subsampled_data/dev/raw_data/ project_output_resnet_lstm/dev/
 # start testing dev scripts
 sbatch scripts/run_01_preprocess_data_cpu.sbatch
 sbatch scripts/run_02_exp1_frozen3d_cpu.sbatch
-sbatch scripts/run_03_exp2_finetune_cpu.sbatch
-sbatch scripts/run_04_exp3_hybrid_cpu.sbatch
+sbatch scripts/run_03_exp2_finetune3d_cpu.sbatch
+sbatch scripts/run_04_exp3_train_hybrid_cpu.sbatch
 sbatch scripts/run_05_evaluate_models_cpu.sbatch
 ```
 

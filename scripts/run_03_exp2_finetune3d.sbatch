@@ -33,7 +33,7 @@ else
 fi
 
 # --- 3. Configuration & Hardware Check ---
-SCRIPT_NAME="03_train_exp2_finetune.py"
+SCRIPT_NAME="03_exp2_finetune3d.py"
 export ENV="dev"
 
 echo "ℹ️ [INFO] Initializing SLURM Job: ${SCRIPT_NAME}"

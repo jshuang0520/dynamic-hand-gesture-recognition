@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
-#SBATCH --job-name=04_exp3_cpu
+#SBATCH --job-name=03_exp2_cpu
 #SBATCH --partition=standard      # Swapped to the CPU queue
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16        # Maximize parallel data loading/processing
 #SBATCH --mem=64G                 # Generous memory for batch handling
 #SBATCH --time=24:00:00           # Massive time bump for CPU backpropagation
-#SBATCH --output=/home/%u/project_output_resnet_lstm/dev/logs/04_exp3-cpu-%j.out
-
+#SBATCH --output=/home/%u/project_output_resnet_lstm/dev/logs/03_exp2-cpu-%j.out
 
 set -e
 
@@ -34,7 +33,7 @@ else
 fi
 
 # --- 3. Configuration ---
-SCRIPT_NAME="04_train_exp3_hybrid.py"
+SCRIPT_NAME="03_exp2_finetune3d.py"
 export ENV="dev"
 
 echo "ℹ️ [INFO] Initializing SLURM Job: ${SCRIPT_NAME} (CPU MODE)"
@@ -46,4 +45,4 @@ echo "🙂 [INFO] Environment active. Running on standard partition..."
 # srun -u ensures the Python output prints to your log file in real-time
 srun -u python "mains/${SCRIPT_NAME}"
 
-echo "✅ [SUCCESS] SLURM Job Complete: Experiment 3 (CPU)."
+echo "✅ [SUCCESS] SLURM Job Complete: Experiment 2 (CPU)."

@@ -15,7 +15,7 @@ class JesterTensorDataset(Dataset):
     def __getitem__(self, idx):
         row = self.data.iloc[idx]
         vid_id = str(row['video_id'])
-        label_idx = self.class_to_idx[row['label']]
+        label_idx = self.class_to_idx[row['gesture']]
         
         path = os.path.join(self.processed_dir, f"{vid_id}.pt")
         if not os.path.exists(path):
