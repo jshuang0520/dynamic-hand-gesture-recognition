@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-#SBATCH --job-name=03_exp3_hybrid
-#SBATCH --partition=gpu
-#SBATCH --gres=gpu:h100:1
-#SBATCH --cpus-per-task=8
-#SBATCH --mem=32G
-#SBATCH --time=08:00:00
-#SBATCH --output=/home/%u/shan_project/slurm_logs/04_exp3-%j.out
+#SBATCH --job-name=01_prep_cpu
+#SBATCH --partition=standard      # Use 'standard' or 'debug' instead of 'gpu'
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=16        # High CPU count for parallel image processing
+#SBATCH --mem=64G                 # High RAM for buffer handling
+#SBATCH --time=04:00:00           
+#SBATCH --output=/home/%u/project_output_resnet_lstm/dev/logs/01-cpu-%j.out
 
 set -e
 
@@ -32,17 +32,15 @@ else
     exit 1
 fi
 
-# --- 3. Configuration & Hardware Check ---
-SCRIPT_NAME="04_train_exp3_hybrid.py"
+# --- 3. Configuration & Execution ---
+SCRIPT_NAME="01_preprocess_data.py"
 export ENV="dev"
 
-echo "ℹ️ [INFO] Initializing SLURM Job: ${SCRIPT_NAME}"
-echo "🙂 [INFO] Environment active. Checking Hardware..."
-
-# Hardware check (Optional but good for GPU jobs)
-nvidia-smi || echo "⚠️ Warning: nvidia-smi failed, checking execution anyway..."
+echo "ℹ️ [INFO] Initializing SLURM Job: ${SCRIPT_NAME} (CPU MODE)"
+echo "🙂 [INFO] Environment active. Running on standard partition..."
 
 # --- 4. Execution ---
+# Note: srun -u ensures unbuffered output so you see logs in real-time
 srun -u python "mains/${SCRIPT_NAME}"
 
-echo "✅ [SUCCESS] SLURM Job Complete: Experiment 3."
+echo "✅ [SUCCESS] SLURM Job Complete: Preprocess data done."

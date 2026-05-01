@@ -16,9 +16,14 @@ data_splits:
 
 paths:
   original_raw_dir: "${RAW_ORIGINAL_JESTER_DIR}"
+  
+  # --- NEW RAW DATA STRUCTURE ---
   raw_data_dir: "${OUTPUT_ROOT}/dev/raw_data"
+  annotations_dir: "${OUTPUT_ROOT}/dev/raw_data/annotations"
+  videos_dir: "${OUTPUT_ROOT}/dev/raw_data/videos"
+  
+  # --- METADATA & OUTPUTS ---
   metadata_dir: "${OUTPUT_ROOT}/dev/metadata"
-  splits_dir: "${OUTPUT_ROOT}/dev/metadata/splits"
   processed_dir: "${OUTPUT_ROOT}/dev/metadata/data_processed"
   weights_dir: "${OUTPUT_ROOT}/dev/models"
   logs_dir: "${OUTPUT_ROOT}/dev/logs"

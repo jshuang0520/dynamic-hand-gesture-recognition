@@ -10,38 +10,59 @@ from src.data.transforms import OfflineVideoProcessor
 logger = get_logger("01_PREPROCESS")
 
 def get_sampled_indices(total_frames, target_count):
-    """Uniformly samples indices across the video duration."""
+    if total_frames == 0: return None
     if total_frames >= target_count:
-        return np.linspace(0, total_frames - 1, target_count).astype(int)
-    # Pad by repeating last frame if video is too short
-    return np.concatenate([np.arange(total_frames), [total_frames - 1] * (target_count - total_frames)])
+        indices = np.linspace(0, total_frames - 1, target_count).astype(int)
+    else:
+        indices = np.arange(total_frames)
+        padding = np.full(target_count - total_frames, total_frames - 1)
+        indices = np.concatenate([indices, padding])
+    return np.clip(indices, 0, total_frames - 1)
 
 def run_preprocessing():
     cfg = load_config()
-    raw_in = cfg['paths']['raw_data_dir']
+    videos_in = cfg['paths']['videos_dir']
     proc_out = cfg['paths']['processed_dir']
     target_f = cfg['experiment']['frames_per_video']
-    os.makedirs(proc_out, exist_ok=True)
     
+    os.makedirs(proc_out, exist_ok=True)
     processor = OfflineVideoProcessor()
-    resize_to_tensor = T.Compose([T.Resize((224, 224)), T.ToTensor()])
+    to_tensor = T.Compose([T.Resize((224, 224)), T.ToTensor()])
 
-    for vid_id in os.listdir(raw_in):
-        vid_path = os.path.join(raw_in, vid_id)
-        if not os.path.isdir(vid_path): continue
+    # Look through the new subdirectories
+    splits = ['train', 'val', 'test']
+    
+    for split in splits:
+        split_dir = os.path.join(videos_in, split)
+        if not os.path.exists(split_dir): 
+            continue
+            
+        video_ids = [d for d in os.listdir(split_dir) if os.path.isdir(os.path.join(split_dir, d))]
         
-        all_f = sorted([f for f in os.listdir(vid_path) if f.endswith('.jpg')])
-        indices = get_sampled_indices(len(all_f), target_f)
-        
-        frames = []
-        for i in indices:
-            img = Image.open(os.path.join(vid_path, all_f[i])).convert('RGB')
-            frames.append(resize_to_tensor(img))
-        
-        # Apply Pad, Crop, Contrast, and Noise in one stack
-        video_tensor = processor(torch.stack(frames))
-        torch.save(video_tensor, os.path.join(proc_out, f"{vid_id}.pt"))
-        logger(f"Saved Preprocessed Tensor: {vid_id}.pt")
+        for vid_id in video_ids:
+            vid_path = os.path.join(split_dir, vid_id)
+            all_f = sorted([f for f in os.listdir(vid_path) if f.endswith('.jpg')])
+            
+            if len(all_f) == 0:
+                logger(f"⚠️ Warning: Skipping empty folder {vid_id} in {split}")
+                continue
+            
+            indices = get_sampled_indices(len(all_f), target_f)
+            
+            try:
+                frames = []
+                for i in indices:
+                    img_path = os.path.join(vid_path, all_f[i])
+                    img = Image.open(img_path).convert('RGB')
+                    frames.append(to_tensor(img))
+                
+                video_tensor = processor(torch.stack(frames))
+                out_path = os.path.join(proc_out, f"{vid_id}.pt")
+                torch.save(video_tensor, out_path)
+                logger(f"✅ Processed {split}/{vid_id}: {len(all_f)} -> {target_f} frames")
+                
+            except Exception as e:
+                logger(f"❌ Error processing {vid_id}: {str(e)}")
 
 if __name__ == "__main__":
     run_preprocessing()

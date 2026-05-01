@@ -76,6 +76,7 @@ sbatch scripts/run_00_prepare_subdataset.sbatch
 
 # Preprocess (Temporal sampling + Offline Noise -> .pt tensors)
 sbatch scripts/run_01_preprocess_data.sbatch
+sbatch scripts/run_01_preprocess_data_cpu.sbatch
 ```
 
 ### 2. Model Training Experiments
@@ -100,10 +101,16 @@ sbatch scripts/run_05_evaluate_models.sbatch
 
 ```bash
 # Check Job Status
-squeue -u shhuang
+squeue -u $USER
 
+# View logs
+tail -f $(find ~/project_output_resnet_lstm/dev/logs/ -name "*-$(squeue -u $USER -h -t RUNNING -n 1 -o "%i").out")  # latest job only
+squeue -u $USER -h -t RUNNING -o "%i" | xargs -I {} find ~/project_output_resnet_lstm/dev/logs/ -name "*-{}.out" | xargs -r tail -f
 # View Real-time Logs
 tail -f ~/project_output_resnet_lstm/dev/logs/01-JOB_ID.out
+
+# Check available GPUs
+sinfo -p gpu -t idle -o "%n %G"
 
 # Cancel a Job
 scancel JOB_ID
