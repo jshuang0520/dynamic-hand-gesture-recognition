@@ -2,7 +2,7 @@
 
 This repository contains a high-performance, decoupled pipeline for evaluating video-based gesture recognition. The project benchmarks a **Hybrid ResNet-50 + LSTM** architecture against **3D ResNet** baselines using the 20bn-jester-v1 dataset.
 
-To ensure 100% scientific reproducibility and bypass the I/O bottlenecks of reading thousands of small JPEG files, this pipeline utilizes **Offline Preprocessing**. Videos are sampled, transformed (noise/pad/crop), and saved as binary tensors before training begins.
+To ensure 100% scientific reproducibility and bypass the I/O bottlenecks of reading thousands of small JPEG files, this pipeline utilizes **Offline Preprocessing**. Videos are uniformly sampled, transformed (noise/pad/crop), and saved as binary tensors before training begins.
 
 ---
 
@@ -24,8 +24,9 @@ To ensure 100% scientific reproducibility and bypass the I/O bottlenecks of read
     ├── .env                         # User paths (ENV_DIR, OUTPUT_ROOT, etc.)
     ├── configs/
     │   ├── dev/config.yaml          # Subsampled testing parameters
-    │   └── prod/config.yaml         # Full-scale production parameters
+    │   └── prod/config.yaml         # Production/Full-scale parameters
     ├── scripts/
+    │   ├── init_dirs.sh             # Directory structure initializer
     │   ├── setup_env.sh             # Environment builder (Python 3.11)
     │   └── run_0X_...sbatch         # SLURM scripts (1-to-1 mapping with mains/)
     ├── mains/
@@ -51,57 +52,91 @@ To ensure 100% scientific reproducibility and bypass the I/O bottlenecks of read
 
 ---
 
-## 🚀 Teammate Setup
+## Teammate Setup
 
-1. **Initialize Environment:** Build the Python 3.11 venv at the path specified in your `.env`.
+1. **Initialize Paths:** Configure your `.env` file based on `.env.example`.
+2. **Create Directories:** Initialize the output folder structure.
+    ```bash
+    chmod +x scripts/init_dirs.sh
+    ./scripts/init_dirs.sh
+    ```
+3. **Build Environment:** Build the Python 3.11 venv at the path specified in your `.env`.
     ```bash
     bash scripts/setup_env.sh
     ```
-2. **Path Configuration:** - Copy `.env.example` to `.env`.
-    - Set `OUTPUT_ROOT` to `/home/shhuang/project_output_resnet_lstm`.
-    - The pipeline will automatically interpolate these into your config at runtime.
 
 ---
 
-## ⚡ Execution Pipeline (00-05 Workflow)
+## Execution Commands
 
-Submit these jobs in sequence. Each stage generates the required inputs for the next.
+### 1. Data Preparation Pipeline
+```bash
+# Generate CSV splits (train/val/test) based on current raw_data
+sbatch scripts/run_00_prepare_subdataset.sbatch
+
+# Preprocess (Temporal sampling + Offline Noise -> .pt tensors)
+sbatch scripts/run_01_preprocess_data.sbatch
+```
+
+### 2. Model Training Experiments
+```bash
+# Train Baseline 1 (Frozen 3D ResNet)
+sbatch scripts/run_02_train_exp1_frozen3d.sbatch
+
+# Train Baseline 2 (Fine-tuned 3D ResNet)
+sbatch scripts/run_03_train_exp2_finetune.sbatch
+
+# Train Proposed Model (Hybrid ResNet+LSTM)
+sbatch scripts/run_04_train_exp3_hybrid.sbatch
+```
+
+### 3. Final Evaluation
+```bash
+# Benchmark all models and generate classification reports
+sbatch scripts/run_05_evaluate_models.sbatch
+```
+
+## Monitoring Jobs
+
+```bash
+# Check Job Status
+squeue -u shhuang
+
+# View Real-time Logs
+tail -f ~/project_output_resnet_lstm/dev/logs/01-JOB_ID.out
+
+# Cancel a Job
+scancel JOB_ID
+```
+
+## For Development Phase
+- Before running the big `sbatch` jobs for training (02-04), it's a good idea to run a "quicktest" locally to make sure the data loading works:
+```bash
+export ENV="dev"
+python mains/01_preprocess_data.py  # Run one or two videos locally first
+```
+
+---
+
+## Execution Pipeline Details
 
 ### Phase 1: Data Preparation
 1. **Subsampling (Step 00):** Extracts a manageable subset of the Jester dataset and generates splits.
-    ```bash
-    sbatch scripts/run_00_prepare_subdataset.sbatch
-    ```
 2. **Preprocessing (Step 01):** - **Temporal Sampling:** Uses uniform distribution (linspace) to capture the full gesture motion into 16 frames.
    - **Offline Augmentation:** Applies padding, center-cropping, and Gaussian noise.
    - **Binary I/O:** Saves results as `.pt` files for ultra-fast GPU training.
-    ```bash
-    sbatch scripts/run_01_preprocess_data.sbatch
-    ```
 
 ### Phase 2: Training Experiments
-3. **Experiment 1 (Frozen 3D ResNet):** Trains only the classification head.
-    ```bash
-    sbatch scripts/run_02_train_exp1_frozen3d.sbatch
-    ```
-4. **Experiment 2 (Fine-Tuned 3D ResNet):** Updates the entire 3D backbone.
-    ```bash
-    sbatch scripts/run_03_train_exp2_finetune.sbatch
-    ```
+3. **Experiment 1 (Frozen 3D):** Trains only the classification head of an R3D-18 model.
+4. **Experiment 2 (Fine-Tuned 3D):** Updates the entire 3D backbone.
 5. **Experiment 3 (Hybrid ResNet+LSTM):** Evaluates the proposed spatial-temporal architecture.
-    ```bash
-    sbatch scripts/run_04_train_exp3_hybrid.sbatch
-    ```
 
 ### Phase 3: Benchmarking
-6. **Evaluation (Step 05):** Pulls best weights from `dev/models/` (as defined in `config.yaml`) and generates comparative metrics.
-    ```bash
-    sbatch scripts/run_05_evaluate_models.sbatch
-    ```
+6. **Evaluation (Step 05):** Pulls best weights from the `models/` directory (as defined in `config.yaml`) and generates comparative metrics.
 
 ---
 
-## 🛠 Core Features
-- **Deterministic Experiments:** Moving noise and transforms to the offline Step 01 ensures every model sees the exact same pixels.
-- **Dynamic Temporal Sampling:** Video length varies in Jester; our sampler ensures the model always receives 16 frames representing the full duration of the action.
-- **Zero-Hardcode Policy:** All paths (input, output, weights, logs) are dynamically generated using `.env` variables and YAML configuration.
+## Core Features
+- **Deterministic Experiments:** Moving noise and transforms to an offline step ensures all models see identical input data.
+- **Dynamic Temporal Sampling:** Our sampler ensures the model always receives 16 frames representing the full duration of the action, solving variable-length issues.
+- **Zero-Hardcode Policy:** All paths and weights are dynamically resolved via `.env` and YAML configurations.
