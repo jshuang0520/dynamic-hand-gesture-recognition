@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#SBATCH --job-name=00_data_prep
+#SBATCH --job-name=00_subset
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:h100:1
 #SBATCH --cpus-per-task=8
@@ -22,10 +22,10 @@ source "${ENV_DIR}/bin/activate"
 # 3. Setup python paths dynamically
 export PYTHONPATH="${PROJECT_ROOT}"
 
-# 4. Enforce Production Configuration for HPC
-export ENV="prod"
+# 4. Environment Configuration for HPC
+export ENV="dev"
 
 # 5. Execution
-srun -u python mains/00_prepare_datasets.py
+srun -u python mains/00_prepare_subdataset.py
 
-echo "✅ [SUCCESS] SLURM Job Complete: Data Preparation."
+echo "✅ [SUCCESS] SLURM Job Complete: Subset dataset done."

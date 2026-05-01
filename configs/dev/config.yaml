@@ -1,22 +1,30 @@
 experiment:
   seed: 20260430
   num_classes: 4
-  target_classes:
-    - "Stop Sign"
-    - "Swiping Left"
-    - "Sliding Two Fingers Down"
-    - "Thumbs Up"
+  target_classes: ["Stop Sign", "Swiping Left", "Sliding Two Fingers Down", "Thumbs Up"]
   frames_per_video: 16
-  batch_size: 4         # Small batch for local RAM
+  batch_size: 4
   learning_rate: 0.0001
-  quick_test: true      # Truncates loops
-  execution_mode: "cpu" # Default to CPU for local dev
+  num_epochs: 10
+  quick_test: true
+  execution_mode: "gpu"
 
 data_splits:
   train_per_class: 8
-  val_per_class: 1
-  test_per_class: 1
+  val_per_class: 2
+  test_per_class: 2
 
 paths:
-  dataset_dir: "${DATA_ROOT}/jester_data_for_dev"
-  weights_dir: "${SHAN_PROJECT_DIR}/weights_dev"
+  original_raw_dir: "${RAW_ORIGINAL_JESTER_DIR}"
+  raw_data_dir: "${OUTPUT_ROOT}/dev/raw_data"
+  metadata_dir: "${OUTPUT_ROOT}/dev/metadata"
+  splits_dir: "${OUTPUT_ROOT}/dev/metadata/splits"
+  processed_dir: "${OUTPUT_ROOT}/dev/metadata/data_processed"
+  weights_dir: "${OUTPUT_ROOT}/dev/models"
+  logs_dir: "${OUTPUT_ROOT}/dev/logs"
+
+evaluation:
+  model_weights:
+    exp1: "${OUTPUT_ROOT}/dev/models/exp1_frozen_best.pth"
+    exp2: "${OUTPUT_ROOT}/dev/models/exp2_finetune_best.pth"
+    exp3: "${OUTPUT_ROOT}/dev/models/exp3_hybrid_best.pth"

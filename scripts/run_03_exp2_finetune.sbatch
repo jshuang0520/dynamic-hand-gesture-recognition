@@ -14,7 +14,9 @@ set -a
 source .env
 set +a
 
-echo "ℹ️ [INFO] Initializing SLURM Job: 02_train_exp2_finetune"
+SCRIPT_NAME="03_train_exp2_finetune.py"
+
+echo "ℹ️ [INFO] Initializing SLURM Job: ${SCRIPT_NAME}"
 
 # 2. Activate the executing user's environment
 source "${ENV_DIR}/bin/activate"
@@ -27,6 +29,6 @@ export ENV="prod"
 
 # 5. Hardware check & Execution
 nvidia-smi || true
-srun -u python mains/02_train_exp2_finetune.py
+srun -u python "mains/${SCRIPT_NAME}"
 
 echo "✅ [SUCCESS] SLURM Job Complete: Experiment 2."

@@ -14,7 +14,9 @@ set -a
 source .env
 set +a
 
-echo "ℹ️ [INFO] Initializing SLURM Job: 01_train_exp1_frozen3d"
+SCRIPT_NAME="02_train_exp1_frozen3d.py"
+
+echo "ℹ️ [INFO] Initializing SLURM Job: ${SCRIPT_NAME}"
 
 # 2. Activate the executing user's environment
 source "${ENV_DIR}/bin/activate"
@@ -23,10 +25,10 @@ source "${ENV_DIR}/bin/activate"
 export PYTHONPATH="${PROJECT_ROOT}"
 
 # 4. Enforce Production Configuration for HPC
-export ENV="prod"
+export ENV="dev"
 
 # 5. Hardware check & Execution
 nvidia-smi || true
-srun -u python mains/01_train_exp1_frozen3d.py
+srun -u python "mains/${SCRIPT_NAME}"
 
 echo "✅ [SUCCESS] SLURM Job Complete: Experiment 1."
