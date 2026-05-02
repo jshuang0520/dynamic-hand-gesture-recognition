@@ -144,11 +144,15 @@ du -ah . --max-depth=1 | sort -rh | head -n 10
 
 
 # prod run
-sbatch scripts/run_01_preprocess_data.sbatch && \
-sbatch scripts/run_02_exp1_frozen3d.sbatch && \
-sbatch scripts/run_03_exp2_finetune3d.sbatch && \
-sbatch scripts/run_04_exp3_train_hybrid.sbatch && \
-sbatch scripts/run_05_evaluate_models.sbatch
+# 1. Run the first job and capture its Job ID
+JOB1=$(sbatch --parsable scripts/run_01_preprocess_data.sbatch)
+# 2. Run the next 3 jobs in parallel, waiting for JOB1 to finish successfully
+JOB2=$(sbatch --parsable --dependency=afterok:$JOB1 scripts/run_02_exp1_frozen3d.sbatch)
+JOB3=$(sbatch --parsable --dependency=afterok:$JOB1 scripts/run_03_exp2_finetune3d.sbatch)
+JOB4=$(sbatch --parsable --dependency=afterok:$JOB1 scripts/run_04_exp3_train_hybrid.sbatch)
+# 3. Run the final job only after all three middle jobs (JOB2, JOB3, and JOB4) finish successfully
+sbatch --dependency=afterok:$JOB2:$JOB3:$JOB4 scripts/run_05_evaluate_models.sbatch
+
 
 squeue --me
 sinfo -p gpu -t idle -o "%n %G"

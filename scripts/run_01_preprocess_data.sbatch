@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=01_preprocess
 #SBATCH --partition=gpu
-#SBATCH --gres=gpu:h100:1
+#SBATCH --gres=gpu:a100:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
 #SBATCH --time=02:00:00
@@ -41,7 +41,7 @@ fi
 export ENV="prod"
 
 # 5. Check hardware
-echo "ℹ️ [INFO] Starting Experiment 1 Training..."
+echo "ℹ️ [INFO] Starting Experiment 1 data preprocessing..."
 nvidia-smi || true
 
 # 6. Execute Python Script

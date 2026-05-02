@@ -48,7 +48,7 @@ def run_preprocessing():
             continue
             
         video_ids = [d for d in os.listdir(split_dir) if os.path.isdir(os.path.join(split_dir, d))]
-        logger.info(f"Processing {len(video_ids)} videos in {split} split...")
+        logger.info(f"Processing {len(video_ids)} videos in {split} set/split...")
         
         for vid_id in video_ids:
             vid_path = os.path.join(split_dir, vid_id)

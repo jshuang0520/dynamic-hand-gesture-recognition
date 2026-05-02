@@ -41,7 +41,7 @@ fi
 export ENV="prod"
 
 # 5. Check hardware
-echo "ℹ️ [INFO] Starting Experiment 1 Training..."
+echo "ℹ️ [INFO] Starting Evaluation..."
 nvidia-smi || true
 
 # 6. Execute Python Script
