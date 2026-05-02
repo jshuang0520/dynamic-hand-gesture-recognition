@@ -10,7 +10,7 @@
 set -euo pipefail
 
 # 1. Navigate to Project Root
-cd "$SLURM_SUBMIT_DIR"
+cd "$SLURM_SUBMIT_DIR"  # The SLURM controller takes your script, assigns it to a compute node, and right before it starts running line 1, it injects a bunch of variables into that node's memory, including this one.
 
 # 2. Load .env dynamically
 if [ -f ".env" ]; then
@@ -27,7 +27,10 @@ ENV_DIR_CLEAN=$(echo "${ENV_DIR}" | tr -d '\r' | xargs)
 ACTIVATE_PATH="${ENV_DIR_CLEAN}/bin/activate"
 if [ -f "$ACTIVATE_PATH" ]; then
     source "$ACTIVATE_PATH"
-    export PYTHONPATH="$SLURM_SUBMIT_DIR:${PYTHONPATH}"
+    
+    # --- CRITICAL FIX: Safe PYTHONPATH handling ---
+    export PYTHONPATH="$SLURM_SUBMIT_DIR:${PYTHONPATH:-}"
+    
     echo "✅ [SUCCESS] Virtual environment activated at $ENV_DIR_CLEAN"
 else
     echo "❌ ERROR: Cannot find virtualenv at: $ACTIVATE_PATH"
@@ -38,7 +41,7 @@ fi
 export ENV="prod"
 
 # 5. Check hardware
-echo "ℹ️ [INFO] Starting Experiment 3 Hybrid Training..."
+echo "ℹ️ [INFO] Starting Experiment 1 Training..."
 nvidia-smi || true
 
 # 6. Execute Python Script

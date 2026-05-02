@@ -5,44 +5,46 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
 #SBATCH --time=02:00:00
-#SBATCH --output=/home/%u/project_output_resnet_lstm/prod/logs/01-%j.out
+#SBATCH --output=/home/%u/scratch.msml640/project_output_resnet_lstm/prod/logs/01-%j.out
 
-set -e
+set -euo pipefail
 
-# --- 1. Load and Clean Environment ---
-if [ -f .env ]; then
+# 1. Navigate to Project Root
+cd "$SLURM_SUBMIT_DIR"  # The SLURM controller takes your script, assigns it to a compute node, and right before it starts running line 1, it injects a bunch of variables into that node's memory, including this one.
+
+# 2. Load .env dynamically
+if [ -f ".env" ]; then
+    echo "ℹ️ [INFO] Loading .env file..."
     set -a; source .env; set +a
 else
     echo "❌ ERROR: .env file missing in $(pwd)"
     exit 1
 fi
 
-# Clean paths (strips hidden characters/carriage returns)
 ENV_DIR_CLEAN=$(echo "${ENV_DIR}" | tr -d '\r' | xargs)
-PROJECT_ROOT_CLEAN=$(echo "${PROJECT_ROOT}" | tr -d '\r' | xargs)
 
-# --- 2. Activate Virtual Environment ---
+# 3. Activate virtual environment
 ACTIVATE_PATH="${ENV_DIR_CLEAN}/bin/activate"
-
 if [ -f "$ACTIVATE_PATH" ]; then
     source "$ACTIVATE_PATH"
-    export PYTHONPATH="${PROJECT_ROOT_CLEAN}:${PYTHONPATH}"
+    
+    # --- CRITICAL FIX: Safe PYTHONPATH handling ---
+    export PYTHONPATH="$SLURM_SUBMIT_DIR:${PYTHONPATH:-}"
+    
+    echo "✅ [SUCCESS] Virtual environment activated at $ENV_DIR_CLEAN"
 else
     echo "❌ ERROR: Cannot find virtualenv at: $ACTIVATE_PATH"
     exit 1
 fi
 
-# --- 3. Configuration & Hardware Check ---
-SCRIPT_NAME="01_preprocess_data.py"
+# 4. Target Environment
 export ENV="prod"
 
-echo "ℹ️ [INFO] Initializing SLURM Job: ${SCRIPT_NAME}"
-echo "🙂 [INFO] Environment active. Checking Hardware..."
+# 5. Check hardware
+echo "ℹ️ [INFO] Starting Experiment 1 Training..."
+nvidia-smi || true
 
-# Hardware check (Optional but good for GPU jobs)
-nvidia-smi || echo "⚠️ Warning: nvidia-smi failed, checking execution anyway..."
-
-# --- 4. Execution ---
-srun -u python "mains/${SCRIPT_NAME}"
+# 6. Execute Python Script
+srun -u python3 mains/01_preprocess_data.py
 
 echo "✅ [SUCCESS] SLURM Job Complete: Preprocess data done."

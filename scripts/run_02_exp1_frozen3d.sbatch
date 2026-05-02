@@ -9,10 +9,10 @@
 
 set -euo pipefail
 
-# 1. Navigate to the folder you submitted this from (Project Root)
-cd "$SLURM_SUBMIT_DIR"
+# 1. Navigate to Project Root
+cd "$SLURM_SUBMIT_DIR"  # The SLURM controller takes your script, assigns it to a compute node, and right before it starts running line 1, it injects a bunch of variables into that node's memory, including this one.
 
-# 2. Load the .env file dynamically
+# 2. Load .env dynamically
 if [ -f ".env" ]; then
     echo "ℹ️ [INFO] Loading .env file..."
     set -a; source .env; set +a
@@ -21,28 +21,30 @@ else
     exit 1
 fi
 
-# Clean the path just in case of hidden carriage returns
 ENV_DIR_CLEAN=$(echo "${ENV_DIR}" | tr -d '\r' | xargs)
 
-# 3. Activate environment dynamically
+# 3. Activate virtual environment
 ACTIVATE_PATH="${ENV_DIR_CLEAN}/bin/activate"
 if [ -f "$ACTIVATE_PATH" ]; then
     source "$ACTIVATE_PATH"
-    export PYTHONPATH="$SLURM_SUBMIT_DIR:${PYTHONPATH}"
+    
+    # --- CRITICAL FIX: Safe PYTHONPATH handling ---
+    export PYTHONPATH="$SLURM_SUBMIT_DIR:${PYTHONPATH:-}"
+    
     echo "✅ [SUCCESS] Virtual environment activated at $ENV_DIR_CLEAN"
 else
     echo "❌ ERROR: Cannot find virtualenv at: $ACTIVATE_PATH"
     exit 1
 fi
 
-# 4. Tell Python we want the PROD config
+# 4. Target Environment
 export ENV="prod"
 
 # 5. Check hardware
 echo "ℹ️ [INFO] Starting Experiment 1 Training..."
 nvidia-smi || true
 
-# 6. Run the script
+# 6. Execute Python Script
 srun -u python3 mains/02_exp1_frozen3d.py
 
-echo "✅ [SUCCESS] SLURM Job Complete."
+echo "✅ [SUCCESS] SLURM Job Complete: Experiment 1."

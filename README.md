@@ -139,6 +139,10 @@ sbatch scripts/run_03_exp2_finetune3d_cpu.sbatch
 sbatch scripts/run_04_exp3_train_hybrid_cpu.sbatch
 sbatch scripts/run_05_evaluate_models_cpu.sbatch
 
+# check space
+du -ah . --max-depth=1 | sort -rh | head -n 10
+
+
 # prod run
 sbatch scripts/run_01_preprocess_data.sbatch && \
 sbatch scripts/run_02_exp1_frozen3d.sbatch && \
