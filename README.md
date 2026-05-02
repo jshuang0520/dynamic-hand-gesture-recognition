@@ -150,6 +150,10 @@ sbatch scripts/run_03_exp2_finetune3d.sbatch && \
 sbatch scripts/run_04_exp3_train_hybrid.sbatch && \
 sbatch scripts/run_05_evaluate_models.sbatch
 
+squeue --me
+sinfo -p gpu -t idle -o "%n %G"
+scancel --me
+
 login-1:~$ find project_output_resnet_lstm/ -type d | awk -F/ 'count[$(NF-1)]++ < 10' | sed -e 's/[^-][^\/]*\//--/g' -e 's/^/ /' -e 's/-/|/'
 
  project_output_resnet_lstm

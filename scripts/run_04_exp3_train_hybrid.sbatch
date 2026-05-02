@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=04_exp3_hybrid
 #SBATCH --partition=gpu
-#SBATCH --gres=gpu:h100:1
+#SBATCH --gres=gpu:a100:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
 #SBATCH --time=12:00:00
@@ -45,6 +45,7 @@ echo "ℹ️ [INFO] Starting Experiment 1 Training..."
 nvidia-smi || true
 
 # 6. Execute Python Script
-srun -u python3 mains/04_train_exp3_hybrid.py
+SCRIPT_NAME="04_exp3_train_hybrid.py"
+srun -u python3 "mains/${SCRIPT_NAME}"
 
 echo "✅ [SUCCESS] SLURM Job Complete: Experiment 3."

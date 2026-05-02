@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=03_exp2_tune
 #SBATCH --partition=gpu
-#SBATCH --gres=gpu:h100:1
+#SBATCH --gres=gpu:a100:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
 #SBATCH --time=08:00:00
@@ -45,6 +45,7 @@ echo "ℹ️ [INFO] Starting Experiment 1 Training..."
 nvidia-smi || true
 
 # 6. Execute Python Script
-srun -u python3 mains/03_train_exp2_finetune.py
+SCRIPT_NAME="03_exp2_finetune3d.py"
+srun -u python3 "mains/${SCRIPT_NAME}"
 
 echo "✅ [SUCCESS] SLURM Job Complete: Experiment 2."

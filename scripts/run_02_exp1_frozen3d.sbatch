@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=01_exp1
 #SBATCH --partition=gpu
-#SBATCH --gres=gpu:h100:1
+#SBATCH --gres=gpu:a100:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
 #SBATCH --time=04:00:00
