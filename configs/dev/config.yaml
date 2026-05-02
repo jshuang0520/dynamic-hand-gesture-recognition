@@ -8,6 +8,14 @@ experiment:
   learning_rate: 0.0001
   num_epochs: 3          # LOWERED: 3 epochs is enough to verify the loop doesn't crash
   execution_mode: "gpu"
+  # --- NEW: Dynamic Tensor Sizing ---
+  preprocess_size: 224    # Base resolution saved to disk (for Hybrid Model)
+  model_input_size: 112   # Resolution interpolated on-the-fly (for 3D ResNet)
+
+# --- NEW: Normalization Statistics ---
+preprocessing:
+  normalize_mean: [0.485, 0.456, 0.406]  # ImageNet Standard
+  normalize_std: [0.229, 0.224, 0.225]   # ImageNet Standard
 
 # The Micro-Split Configuration
 data_splits:

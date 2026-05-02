@@ -26,8 +26,18 @@ def run_preprocessing():
     target_f = cfg['experiment']['frames_per_video']
     
     os.makedirs(proc_out, exist_ok=True)
-    processor = OfflineVideoProcessor() # Handles your noise/cropping
-    to_tensor = T.Compose([T.Resize((224, 224)), T.ToTensor()])
+    processor = OfflineVideoProcessor() 
+    
+    # --- FIX FOR HANNAH: Pulling ImageNet stats & Size dynamically ---
+    norm_mean = cfg['preprocessing']['normalize_mean']
+    norm_std = cfg['preprocessing']['normalize_std']
+    prep_size = cfg['experiment']['preprocess_size']
+    
+    to_tensor = T.Compose([
+        T.Resize((prep_size, prep_size)),
+        T.ToTensor(),
+        T.Normalize(mean=norm_mean, std=norm_std) 
+    ])
 
     splits = ['train', 'val', 'test']
     total_processed = 0
@@ -50,17 +60,13 @@ def run_preprocessing():
                 indices = get_sampled_indices(len(all_f), target_f)
                 frames = [to_tensor(Image.open(os.path.join(vid_path, all_f[i])).convert('RGB')) for i in indices]
                 
-                # Stack to (Frames, Channels, H, W) and apply augmentation
                 video_tensor = processor(torch.stack(frames))
-                
-                # Save the processed video tensor (e.g. 1037.pt)
                 torch.save(video_tensor, os.path.join(proc_out, f"{vid_id}.pt"))
                 total_processed += 1
                 
             except Exception as e:
-                logger.error(f"Error processing {vid_id}: {str(e)}")
-
-    logger.info(f"✅ Preprocessing complete! {total_processed} videos converted to .pt files.")
+                logger.error(f"Failed processing video {vid_id}: {e}")
+    logger.info(f"Successfully preprocessed {total_processed} videos.")
 
 if __name__ == "__main__":
     run_preprocessing()

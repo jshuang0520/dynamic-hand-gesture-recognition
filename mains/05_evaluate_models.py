@@ -1,7 +1,8 @@
 import os
 import torch
 import torch.nn as nn
-from sklearn.metrics import classification_report, accuracy_score
+import torch.nn.functional as F
+from sklearn.metrics import accuracy_score
 from torchvision.models.video import r3d_18
 from utilities.config_parser import load_config
 from utilities.logger import get_logger
@@ -14,7 +15,6 @@ def run_evaluation():
     logger = get_logger("05_EVALUATION", log_dir=cfg['paths']['logs_dir'])
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
-    # Load the specific TEST loader
     ann_path = cfg['paths']['annotations_dir']
     p_path = cfg['paths']['processed_dir']
     classes = cfg['experiment']['target_classes']
@@ -37,17 +37,27 @@ def run_evaluation():
             
         model = get_model_func()
         if "exp1" in exp_name or "exp2" in exp_name:
-            model.fc = nn.Linear(model.fc.in_features, cfg['experiment']['num_classes'])
+            # Match the Dropout structure added in training
+            model.fc = nn.Sequential(
+                nn.Dropout(p=0.5),
+                nn.Linear(model.fc[1].in_features if isinstance(model.fc, nn.Sequential) else model.fc.in_features, cfg['experiment']['num_classes'])
+            )
             
-        model.load_state_dict(torch.load(weight_path, map_location=device))
+        # --- FIX FOR HANNAH: Load from checkpoint dictionary ---
+        checkpoint = torch.load(weight_path, map_location=device)
+        model.load_state_dict(checkpoint['model_state_dict'])
         model = model.to(device)
         model.eval()
         
         preds, labels = [], []
+        target_size = cfg['experiment']['model_input_size']
+        
         with torch.no_grad():
             for inputs, targets in test_loader:
                 if "exp1" in exp_name or "exp2" in exp_name:
-                    inputs = inputs.permute(0, 2, 1, 3, 4) # R3D_18 expects B, C, F, H, W
+                    inputs = inputs.permute(0, 2, 1, 3, 4) 
+                    # Apply the same interpolation used in training
+                    inputs = F.interpolate(inputs, size=(16, target_size, target_size), mode='trilinear', align_corners=False)
                 
                 inputs, targets = inputs.to(device), targets.to(device)
                 out = model(inputs)
@@ -55,9 +65,7 @@ def run_evaluation():
                 labels.extend(targets.cpu().numpy())
         
         acc = accuracy_score(labels, preds)
-        logger.info(f"--- 📊 {exp_name.upper()} RESULTS ---")
-        logger.info(f"Overall Accuracy: {acc * 100:.2f}%")
-        logger.info("\n" + classification_report(labels, preds, target_names=classes, zero_division=0))
+        logger.info(f"--- 📊 {exp_name.upper()} FINAL TEST ACCURACY: {acc*100:.2f}% ---")
 
 if __name__ == "__main__":
     run_evaluation()
