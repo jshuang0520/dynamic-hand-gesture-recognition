@@ -8,6 +8,9 @@ from utilities.logger import get_logger
 from src.data.transforms import OfflineVideoProcessor
 
 def get_sampled_indices(total_frames, target_count):
+    """
+    uniformly sample frames from the video
+    """
     if total_frames == 0: return None
     if total_frames >= target_count:
         indices = np.linspace(0, total_frames - 1, target_count).astype(int)
@@ -16,6 +19,56 @@ def get_sampled_indices(total_frames, target_count):
         padding = np.full(target_count - total_frames, total_frames - 1)
         indices = np.concatenate([indices, padding])
     return np.clip(indices, 0, total_frames - 1)
+
+# def get_sampled_indices(total_frames, target_count=16, random_sample=False):
+#     """
+#     Subsamples frames using either Uniform (Validation/Test) or 
+#     Temporal Segment Networks (Training).
+
+#     ------------------
+#     If we want to use this SOTA approach, we will need to tweak 01_preprocess_data.py slightly. Because preprocessing happens completely offline (before the train/val split is explicitly loaded by the dataloader), we have two choices:
+#     The Simple Way (Stick to Uniform): Just leave 01_preprocess_data.py using uniform sampling (which is what my provided code effectively does if we don't pass random_sample=True). For Jester, uniform sampling usually yields excellent results.
+#     The Advanced Way (On-the-fly): If we truly want to use TSN to randomly sample different frames every single epoch to prevent overfitting, we cannot do it in 01_preprocess_data.py. we would have to move this sampling logic into src/data/loader.py so it reads the raw .jpg files during the training loop.
+#     """
+#     if total_frames == 0: 
+#         return None
+        
+#     # --- Scenario A: Short Video (Pad the end) ---
+#     if total_frames < target_count:
+#         indices = np.arange(total_frames)
+#         padding = np.full(target_count - total_frames, total_frames - 1)
+#         return np.concatenate([indices, padding])
+    
+#     # --- Scenario B: Uniform Sampling (For Eval/Test) ---
+#     if not random_sample:
+#         return np.linspace(0, total_frames - 1, target_count).astype(int)
+        
+#     # --- Scenario C: TSN Random Segment Sampling (For Training) ---
+#     # Divide the video into `target_count` chunks evenly
+#     '''
+#     Temporal Segment Sampling (TSN)
+#     https://arxiv.org/pdf/1608.00859.pdf
+    
+#     - How it works: 
+#     It divides the 40-frame video into 16 equal "chunks". It then randomly picks exactly 1 frame from inside each chunk.
+
+#     - Why it works: 
+#     It guarantees we cover the entire timeline of the video (like Uniform), but introduces randomness (like Random Cropping) so the model never sees the exact same 16 frames twice.
+#     '''
+#     segments = np.linspace(0, total_frames, target_count + 1).astype(int)
+#     indices = np.zeros(target_count, dtype=int)
+    
+#     for i in range(target_count):
+#         start = segments[i]
+#         end = segments[i + 1]
+        
+#         # Pick a random frame inside this specific chunk
+#         if start == end: 
+#             indices[i] = start
+#         else:
+#             indices[i] = np.random.randint(start, end)
+            
+#     return np.clip(indices, 0, total_frames - 1)
 
 def run_preprocessing():
     cfg = load_config()

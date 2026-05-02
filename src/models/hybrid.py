@@ -7,9 +7,9 @@ logger = get_logger("MODEL_HYBRID")
 
 class HybridResNetLSTM(nn.Module):
     """Proposed architecture: Pre-trained ResNet50 spatial extractor + Temporal LSTM."""
-    def __init__(self, num_classes=4, hidden_dim=256):
+    def __init__(self, num_classes=4, hidden_dim=256, dropout_rate=0.5):
         super(HybridResNetLSTM, self).__init__()
-        logger.info("Initializing Hybrid ResNet-50 + LSTM Architecture")
+        logger.info("Initializing Robust Hybrid ResNet-50 + LSTM Architecture")
         
         # Spatial Feature Extractor
         self.backbone = resnet50(weights=ResNet50_Weights.DEFAULT)
@@ -17,6 +17,9 @@ class HybridResNetLSTM(nn.Module):
         
         # Temporal Modeler & Classifier
         self.lstm = nn.LSTM(input_size=2048, hidden_size=hidden_dim, num_layers=1, batch_first=True)
+        
+        # --- ROBUSTNESS ENHANCEMENT: Dropout Layer ---
+        self.dropout = nn.Dropout(p=dropout_rate)
         self.classifier = nn.Linear(hidden_dim, num_classes)
 
     def forward(self, x):
@@ -29,4 +32,6 @@ class HybridResNetLSTM(nn.Module):
         spatial_feats = spatial_feats.view(b, f, -1)
         lstm_out, (hn, cn) = self.lstm(spatial_feats)
         
-        return self.classifier(hn[-1])
+        # --- ROBUSTNESS ENHANCEMENT: Apply Dropout before classification ---
+        out = self.dropout(hn[-1])
+        return self.classifier(out)

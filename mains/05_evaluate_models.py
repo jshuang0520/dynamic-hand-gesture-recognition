@@ -1,4 +1,5 @@
 import os
+import csv
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -37,13 +38,11 @@ def run_evaluation():
             
         model = get_model_func()
         if "exp1" in exp_name or "exp2" in exp_name:
-            # Match the Dropout structure added in training
             model.fc = nn.Sequential(
                 nn.Dropout(p=0.5),
                 nn.Linear(model.fc[1].in_features if isinstance(model.fc, nn.Sequential) else model.fc.in_features, cfg['experiment']['num_classes'])
             )
             
-        # --- FIX FOR HANNAH: Load from checkpoint dictionary ---
         checkpoint = torch.load(weight_path, map_location=device)
         model.load_state_dict(checkpoint['model_state_dict'])
         model = model.to(device)
@@ -56,7 +55,6 @@ def run_evaluation():
             for inputs, targets in test_loader:
                 if "exp1" in exp_name or "exp2" in exp_name:
                     inputs = inputs.permute(0, 2, 1, 3, 4) 
-                    # Apply the same interpolation used in training
                     inputs = F.interpolate(inputs, size=(16, target_size, target_size), mode='trilinear', align_corners=False)
                 
                 inputs, targets = inputs.to(device), targets.to(device)
@@ -66,6 +64,18 @@ def run_evaluation():
         
         acc = accuracy_score(labels, preds)
         logger.info(f"--- 📊 {exp_name.upper()} FINAL TEST ACCURACY: {acc*100:.2f}% ---")
+
+        # --- FIX FOR HANNAH: Save Predictions to CSV for Confusion Matrix ---
+        true_labels_str = [classes[i] for i in labels]
+        pred_labels_str = [classes[i] for i in preds]
+        
+        csv_path = os.path.join(cfg['paths']['logs_dir'], f"{exp_name}_test_predictions.csv")
+        with open(csv_path, 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(['True_Label', 'Predicted_Label'])
+            for t, p in zip(true_labels_str, pred_labels_str):
+                writer.writerow([t, p])
+        logger.info(f"💾 Predictions saved to {csv_path} for plotting.")
 
 if __name__ == "__main__":
     run_evaluation()

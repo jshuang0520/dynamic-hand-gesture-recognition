@@ -11,7 +11,7 @@ from src.models.hybrid import HybridResNetLSTM
 def run_exp3_hybrid():
     cfg = load_config()
     logger = get_logger("04_EXP3_HYBRID", log_dir=cfg['paths']['logs_dir'])
-    logger.info("Initializing Experiment 3 (Proposed Hybrid ResNet50 + LSTM)")
+    logger.info("Initializing Experiment 3 (Robust Hybrid ResNet50 + LSTM)")
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     train_loader, val_loader = get_loaders(cfg)
@@ -24,11 +24,17 @@ def run_exp3_hybrid():
         raise e
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=cfg['experiment']['learning_rate'])
+    
+    # --- ROBUSTNESS ENHANCEMENT: Added Weight Decay (L2 Regularization) ---
+    optimizer = optim.Adam(model.parameters(), lr=cfg['experiment']['learning_rate'], weight_decay=1e-4)
     
     epochs = cfg['experiment']['num_epochs']
     best_val_loss = float('inf')
     metrics_history = []
+    
+    # --- ROBUSTNESS ENHANCEMENT: Early Stopping Setup ---
+    patience = 5 
+    epochs_no_improve = 0
     
     for epoch in range(epochs):
         model.train()
@@ -43,6 +49,11 @@ def run_exp3_hybrid():
             outputs = model(inputs)
             loss = criterion(outputs, targets)
             loss.backward()
+            
+            # --- ROBUSTNESS ENHANCEMENT: Gradient Clipping for LSTM ---
+            # Prevents exploding gradients which are common in recurrent networks
+            nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            
             optimizer.step()
             
             train_loss += loss.item()
@@ -74,8 +85,11 @@ def run_exp3_hybrid():
         
         metrics_history.append({'epoch': epoch + 1, 'train_loss': avg_train_loss, 'val_loss': avg_val_loss, 'train_acc': train_acc, 'val_acc': val_acc})
         
+        # --- ROBUSTNESS ENHANCEMENT: Early Stopping & Loss-Based Saving ---
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
+            epochs_no_improve = 0  # Reset counter
+            
             out_path = os.path.join(cfg['paths']['weights_dir'], "exp3_hybrid_best.pth")
             torch.save({
                 'epoch': epoch + 1,
@@ -84,12 +98,21 @@ def run_exp3_hybrid():
                 'val_loss': best_val_loss,
             }, out_path)
             logger.info(f"🌟 New best model (Val Loss: {best_val_loss:.4f}) saved to {out_path}")
+        else:
+            epochs_no_improve += 1
+            logger.info(f"⚠️ Validation loss did not improve for {epochs_no_improve} epoch(s).")
+            if epochs_no_improve >= patience:
+                logger.info(f"🛑 EARLY STOPPING triggered at epoch {epoch+1}! No improvement for {patience} consecutive epochs.")
+                break # Kills the loop gracefully
 
+    # Save Metrics CSV regardless of early stopping
     metrics_file = os.path.join(cfg['paths']['logs_dir'], "exp3_metrics.csv")
     with open(metrics_file, 'w', newline='') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=['epoch', 'train_loss', 'val_loss', 'train_acc', 'val_acc'])
         writer.writeheader()
         writer.writerows(metrics_history)
+        
+    logger.info("✅ Experiment 3 Hybrid Training Complete.")
 
 if __name__ == "__main__":
     run_exp3_hybrid()

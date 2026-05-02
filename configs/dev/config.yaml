@@ -2,7 +2,7 @@ experiment:
   # Using today's date in Greenbelt as the seed for good luck
   seed: 20260501
   num_classes: 4
-  target_classes: ["Stop Sign", "Swiping Left", "Sliding Two Fingers Down", "Thumb Down"]
+  target_classes: ["Stop Sign", "Swiping Left", "Sliding Two Fingers Down", "Thumb Up"]
   frames_per_video: 16
   batch_size: 2          # LOWERED: To accommodate the micro-dataset size
   learning_rate: 0.0001
