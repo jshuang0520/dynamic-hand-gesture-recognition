@@ -54,7 +54,7 @@ project_output_resnet_lstm/               # Global Output Root (Absolute paths i
         └── reproducibility.py       # Global Seed Locker (20260430)
 ```
 
-- Note. In this dataset, we only target 4 selected classes: ["Stop Sign", "Swiping Left", "Sliding Two Fingers Down", "Thumb Down"]
+- Note. In this dataset, we only target 4 selected classes: ["Stop Sign", "Swiping Left", "Sliding Two Fingers Down", "Thumb Up"]
 
 ---
 
