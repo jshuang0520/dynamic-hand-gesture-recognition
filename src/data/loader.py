@@ -14,14 +14,19 @@ class JesterTensorDataset(Dataset):
 
     def __getitem__(self, idx):
         row = self.data.iloc[idx]
-        vid_id = str(row['video_id'])
-        label_idx = self.class_to_idx[row['gesture']]
         
-        path = os.path.join(self.processed_dir, f"{vid_id}.pt")
-        if not os.path.exists(path):
-            return torch.zeros((16, 3, 224, 224)), label_idx
-            
-        return torch.load(path), label_idx
+        # Depending on your CSV structure, grab the ID and Label
+        video_id = str(row['video_id']) 
+        label_str = row['gesture']
+        label_idx = self.classes.index(label_str)
+        
+        # Load the pre-processed tensor
+        tensor_path = os.path.join(self.processed_dir, f"{video_id}.pt")
+        video_tensor = torch.load(tensor_path)
+        
+        # --- HANNAH'S CRITICAL FIX: Return 3 items instead of 2 ---
+        # Old: return video_tensor, label_idx
+        return video_tensor, label_idx, video_id
 
 def get_loaders(config):
     p_path = config['paths']['processed_dir']
