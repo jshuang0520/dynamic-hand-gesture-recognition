@@ -1,15 +1,42 @@
 import os
-import csv
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from sklearn.metrics import accuracy_score
+import pandas as pd
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 from torchvision.models.video import r3d_18
+
+# --- CRITICAL HPC FIX: Headless backend for plotting ---
+import matplotlib
+matplotlib.use('Agg') 
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 from utilities.config_parser import load_config
 from utilities.logger import get_logger
 from src.data.loader import JesterTensorDataset
 from torch.utils.data import DataLoader
 from src.models.hybrid import HybridResNetLSTM
+
+def generate_plots(exp_name, cfg, true_labels, pred_labels, classes, logger):
+    """Generates and saves PNG plots for the report without opening GUI windows."""
+    logs_dir = cfg['paths']['logs_dir']
+    
+    # Plot Confusion Matrix
+    cm = confusion_matrix(true_labels, pred_labels, labels=classes)
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
+                xticklabels=classes, yticklabels=classes)
+    plt.title(f"{exp_name.upper()} - Confusion Matrix")
+    plt.xlabel("Predicted Gesture")
+    plt.ylabel("Actual Gesture")
+    plt.xticks(rotation=45, ha='right')
+    plt.tight_layout()
+    
+    cm_path = os.path.join(logs_dir, f"{exp_name}_confusion_matrix.png")
+    plt.savefig(cm_path, dpi=300)
+    plt.close()
+    logger.info(f"📊 Saved Confusion Matrix Plot: {cm_path}")
 
 def run_evaluation():
     cfg = load_config()
@@ -28,6 +55,10 @@ def run_evaluation():
         "exp2_finetune": ("exp2_finetune_best.pth", lambda: r3d_18()),
         "exp3_hybrid": ("exp3_hybrid_best.pth", lambda: HybridResNetLSTM(num_classes=cfg['experiment']['num_classes']))
     }
+
+    # --- HANNAH'S FIX: Dedicated directory for test predictions ---
+    results_dir = os.path.join(cfg['paths']['logs_dir'], "test_predictions")
+    os.makedirs(results_dir, exist_ok=True)
 
     for exp_name, (weight_file, get_model_func) in model_constructors.items():
         weight_path = os.path.join(cfg['paths']['weights_dir'], weight_file)
@@ -48,11 +79,19 @@ def run_evaluation():
         model = model.to(device)
         model.eval()
         
-        preds, labels = [], []
+        # --- HANNAH'S FIX: Tracking Video IDs ---
+        preds, labels, video_ids = [], [], []
         target_size = cfg['experiment']['model_input_size']
         
         with torch.no_grad():
-            for inputs, targets in test_loader:
+            for batch in test_loader:
+                # --- SAFETY NET: Handles both 2-item and 3-item dataset returns ---
+                if len(batch) == 3:
+                    inputs, targets, ids = batch
+                else:
+                    inputs, targets = batch
+                    ids = ["unknown"] * inputs.size(0)
+
                 if "exp1" in exp_name or "exp2" in exp_name:
                     inputs = inputs.permute(0, 2, 1, 3, 4) 
                     inputs = F.interpolate(inputs, size=(16, target_size, target_size), mode='trilinear', align_corners=False)
@@ -61,21 +100,30 @@ def run_evaluation():
                 out = model(inputs)
                 preds.extend(torch.argmax(out, dim=1).cpu().numpy())
                 labels.extend(targets.cpu().numpy())
+                video_ids.extend(ids)
         
         acc = accuracy_score(labels, preds)
         logger.info(f"--- 📊 {exp_name.upper()} FINAL TEST ACCURACY: {acc*100:.2f}% ---")
 
-        # --- FIX FOR HANNAH: Save Predictions to CSV for Confusion Matrix ---
+        # Map to string labels for readable CSVs and Classification Reports
         true_labels_str = [classes[i] for i in labels]
         pred_labels_str = [classes[i] for i in preds]
         
-        csv_path = os.path.join(cfg['paths']['logs_dir'], f"{exp_name}_test_predictions.csv")
-        with open(csv_path, 'w', newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow(['True_Label', 'Predicted_Label'])
-            for t, p in zip(true_labels_str, pred_labels_str):
-                writer.writerow([t, p])
-        logger.info(f"💾 Predictions saved to {csv_path} for plotting.")
+        report = classification_report(true_labels_str, pred_labels_str, target_names=classes)
+        logger.info(f"\nClassification Report for {exp_name}:\n{report}")
+
+        # --- HANNAH'S FIX: Pandas DataFrame Export ---
+        df = pd.DataFrame({
+            "video_id": video_ids, 
+            "true_label": true_labels_str,  # Saved as readable strings
+            "pred_label": pred_labels_str
+        })
+        csv_path = os.path.join(results_dir, f"{exp_name}_test_predictions.csv")
+        df.to_csv(csv_path, index=False)
+        logger.info(f"💾 Saved predictions to {csv_path}")
+        
+        # Generate the Auto-Plots
+        generate_plots(exp_name, cfg, true_labels_str, pred_labels_str, classes, logger)
 
 if __name__ == "__main__":
     run_evaluation()
