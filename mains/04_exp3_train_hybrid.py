@@ -25,14 +25,14 @@ def run_exp3_hybrid():
 
     criterion = nn.CrossEntropyLoss()
     
-    # --- ROBUSTNESS ENHANCEMENT: Added Weight Decay (L2 Regularization) ---
+    # --- ROBUSTNESS: Weight Decay (L2 Regularization) ---
     optimizer = optim.Adam(model.parameters(), lr=cfg['experiment']['learning_rate'], weight_decay=1e-4)
     
     epochs = cfg['experiment']['num_epochs']
     best_val_loss = float('inf')
     metrics_history = []
     
-    # --- ROBUSTNESS ENHANCEMENT: Early Stopping Setup ---
+    # --- ROBUSTNESS: Early Stopping Setup ---
     patience = 5 
     epochs_no_improve = 0
     
@@ -40,7 +40,13 @@ def run_exp3_hybrid():
         model.train()
         train_loss, correct_train, total_train = 0.0, 0, 0
         
-        for inputs, targets in train_loader:
+        for batch in train_loader:
+            # --- SAFE UNPACKING: Discards the ID during training ---
+            if len(batch) == 3:
+                inputs, targets, _ = batch
+            else:
+                inputs, targets = batch
+                
             # 2D ResNet uses the 224x224 inputs directly, no interpolation/permute needed
             inputs = inputs.to(device)
             targets = targets.to(device)
@@ -50,8 +56,7 @@ def run_exp3_hybrid():
             loss = criterion(outputs, targets)
             loss.backward()
             
-            # --- ROBUSTNESS ENHANCEMENT: Gradient Clipping for LSTM ---
-            # Prevents exploding gradients which are common in recurrent networks
+            # --- ROBUSTNESS: Gradient Clipping for LSTM ---
             nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             
             optimizer.step()
@@ -67,7 +72,13 @@ def run_exp3_hybrid():
         model.eval()
         val_loss, correct_val, total_val = 0.0, 0, 0
         with torch.no_grad():
-            for inputs, targets in val_loader:
+            for batch in val_loader:
+                # --- SAFE UNPACKING ---
+                if len(batch) == 3:
+                    inputs, targets, _ = batch
+                else:
+                    inputs, targets = batch
+                    
                 inputs = inputs.to(device)
                 targets = targets.to(device)
                 outputs = model(inputs)
@@ -85,7 +96,7 @@ def run_exp3_hybrid():
         
         metrics_history.append({'epoch': epoch + 1, 'train_loss': avg_train_loss, 'val_loss': avg_val_loss, 'train_acc': train_acc, 'val_acc': val_acc})
         
-        # --- ROBUSTNESS ENHANCEMENT: Early Stopping & Loss-Based Saving ---
+        # --- ROBUSTNESS: Early Stopping & Loss-Based Saving ---
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
             epochs_no_improve = 0  # Reset counter

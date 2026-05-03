@@ -19,12 +19,10 @@ def run_exp1_frozen():
     
     try:
         model = r3d_18(weights=R3D_18_Weights.DEFAULT)
-        # Freeze backbone
         for param in model.parameters():
             param.requires_grad = False
             
         num_ftrs = model.fc.in_features
-        # --- ENHANCEMENT: Dropout added ---
         model.fc = nn.Sequential(
             nn.Dropout(p=0.5),
             nn.Linear(num_ftrs, cfg['experiment']['num_classes'])
@@ -38,16 +36,21 @@ def run_exp1_frozen():
     optimizer = optim.Adam(model.fc.parameters(), lr=cfg['experiment']['learning_rate'])
     
     epochs = cfg['experiment']['num_epochs']
-    best_val_loss = float('inf') # --- FIX FOR HANNAH: Val Loss Optimization ---
+    best_val_loss = float('inf') 
     metrics_history = []
     
     for epoch in range(epochs):
         model.train()
         train_loss, correct_train, total_train = 0.0, 0, 0
         
-        for batch_idx, (inputs, targets) in enumerate(train_loader):
+        for batch_idx, batch in enumerate(train_loader):
+            # --- SAFE UNPACKING ---
+            if len(batch) == 3:
+                inputs, targets, _ = batch
+            else:
+                inputs, targets = batch
+                
             inputs = inputs.permute(0, 2, 1, 3, 4).to(device)
-            # --- FIX FOR HANNAH: Dynamic Downsampling ---
             target_size = cfg['experiment']['model_input_size']
             inputs = F.interpolate(inputs, size=(16, target_size, target_size), mode='trilinear', align_corners=False)
             targets = targets.to(device)
@@ -66,11 +69,16 @@ def run_exp1_frozen():
         avg_train_loss = train_loss / len(train_loader)
         train_acc = 100. * correct_train / total_train
         
-        # Validation
         model.eval()
         val_loss, correct_val, total_val = 0.0, 0, 0
         with torch.no_grad():
-            for inputs, targets in val_loader:
+            for batch in val_loader:
+                # --- SAFE UNPACKING ---
+                if len(batch) == 3:
+                    inputs, targets, _ = batch
+                else:
+                    inputs, targets = batch
+                    
                 inputs = inputs.permute(0, 2, 1, 3, 4).to(device)
                 inputs = F.interpolate(inputs, size=(16, target_size, target_size), mode='trilinear', align_corners=False)
                 targets = targets.to(device)
@@ -90,7 +98,6 @@ def run_exp1_frozen():
         
         metrics_history.append({'epoch': epoch + 1, 'train_loss': avg_train_loss, 'val_loss': avg_val_loss, 'train_acc': train_acc, 'val_acc': val_acc})
         
-        # --- ENHANCEMENT: Checkpoint Saving ---
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
             out_path = os.path.join(cfg['paths']['weights_dir'], "exp1_baseline_frozen.pth")
@@ -102,7 +109,6 @@ def run_exp1_frozen():
             }, out_path)
             logger.info(f"🌟 New best model (Val Loss: {best_val_loss:.4f}) saved to {out_path}")
             
-    # Save Metrics CSV
     metrics_file = os.path.join(cfg['paths']['logs_dir'], "exp1_metrics.csv")
     with open(metrics_file, 'w', newline='') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=['epoch', 'train_loss', 'val_loss', 'train_acc', 'val_acc'])

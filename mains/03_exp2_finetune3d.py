@@ -19,7 +19,6 @@ def run_exp2_finetune():
     
     try:
         model = r3d_18(weights=R3D_18_Weights.DEFAULT)
-        # Not freezing backbone here
         num_ftrs = model.fc.in_features
         model.fc = nn.Sequential(
             nn.Dropout(p=0.5),
@@ -41,7 +40,13 @@ def run_exp2_finetune():
         model.train()
         train_loss, correct_train, total_train = 0.0, 0, 0
         
-        for batch_idx, (inputs, targets) in enumerate(train_loader):
+        for batch_idx, batch in enumerate(train_loader):
+            # --- SAFE UNPACKING ---
+            if len(batch) == 3:
+                inputs, targets, _ = batch
+            else:
+                inputs, targets = batch
+                
             inputs = inputs.permute(0, 2, 1, 3, 4).to(device)
             target_size = cfg['experiment']['model_input_size']
             inputs = F.interpolate(inputs, size=(16, target_size, target_size), mode='trilinear', align_corners=False)
@@ -64,7 +69,13 @@ def run_exp2_finetune():
         model.eval()
         val_loss, correct_val, total_val = 0.0, 0, 0
         with torch.no_grad():
-            for inputs, targets in val_loader:
+            for batch in val_loader:
+                # --- SAFE UNPACKING ---
+                if len(batch) == 3:
+                    inputs, targets, _ = batch
+                else:
+                    inputs, targets = batch
+                    
                 inputs = inputs.permute(0, 2, 1, 3, 4).to(device)
                 inputs = F.interpolate(inputs, size=(16, target_size, target_size), mode='trilinear', align_corners=False)
                 targets = targets.to(device)
