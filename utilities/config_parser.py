@@ -24,13 +24,22 @@ def load_config():
         expanded_yaml = os.path.expandvars(f.read())
     cfg = yaml.safe_load(expanded_yaml)
 
+    # --- DEVELOPMENT-FRIENDLY TRACKING ---
+    run_id = os.environ.get("PIPELINE_RUN_ID")
+    if run_id:
+        # ONLY route the logs, CSVs, and plots to the timestamped folder.
+        # Leave the weights strictly in the static root folder!
+        logger.info(f"📁 Tracking Logs to: {run_id} | Keeping Weights Static.")
+        cfg['paths']['logs_dir'] = os.path.join(cfg['paths']['logs_dir'], run_id)
+        os.makedirs(cfg['paths']['logs_dir'], exist_ok=True)
+
     # Validate Structural Integrity
     required_blocks = ['experiment', 'data_splits', 'paths', 'preprocessing']
     for block in required_blocks:
         if block not in cfg:
             raise KeyError(f"Missing required config block: '{block}'")
 
-    # --- NEW: Provide safe fallbacks for Robustness parameters ---
+    # Provide safe fallbacks
     exp = cfg['experiment']
     exp.setdefault('preprocess_size', 224)
     exp.setdefault('model_input_size', 112)

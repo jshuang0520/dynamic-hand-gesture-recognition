@@ -130,20 +130,23 @@ scancel JOB_ID
 ```bash
 # init settings
 bash scripts/init_dirs.sh
-cp -r jester_subsampled_data/dev/raw_data/ project_output_resnet_lstm/dev/
+# cp -r jester_subsampled_data/dev/raw_data/ project_output_resnet_lstm/dev/
 
-# start testing dev scripts
-sbatch scripts/run_01_preprocess_data_cpu.sbatch
-sbatch scripts/run_02_exp1_frozen3d_cpu.sbatch
-sbatch scripts/run_03_exp2_finetune3d_cpu.sbatch
-sbatch scripts/run_04_exp3_train_hybrid_cpu.sbatch
-sbatch scripts/run_05_evaluate_models_cpu.sbatch
+# # start testing dev scripts
+# sbatch scripts/run_01_preprocess_data_cpu.sbatch
+# sbatch scripts/run_02_exp1_frozen3d_cpu.sbatch
+# sbatch scripts/run_03_exp2_finetune3d_cpu.sbatch
+# sbatch scripts/run_04_exp3_train_hybrid_cpu.sbatch
+# sbatch scripts/run_05_evaluate_models_cpu.sbatch
 
 # check space
 du -ah . --max-depth=1 | sort -rh | head -n 10
 
 
 # prod run
+# 0. Generate the timestamp once (e.g., res_since_20260503_1701) and export it
+export PIPELINE_RUN_ID="res_since_$(date +%Y%m%d_%H%M)"
+# 2. Launch your jobs! They will all inherit that exact same PIPELINE_RUN_ID
 # 1. Run the first job and capture its Job ID
 JOB1=$(sbatch --parsable scripts/run_01_preprocess_data.sbatch)
 # 2. Run the next 3 jobs in parallel, waiting for JOB1 to finish successfully
@@ -153,16 +156,19 @@ JOB4=$(sbatch --parsable --dependency=afterok:$JOB1 scripts/run_04_exp3_train_hy
 # 3. Run the final job only after all three middle jobs (JOB2, JOB3, and JOB4) finish successfully
 sbatch --dependency=afterok:$JOB2:$JOB3:$JOB4 scripts/run_05_evaluate_models.sbatch
 
-# # when run_01_preprocess_data is already done successfully
-# JOB2=$(sbatch --parsable scripts/run_02_exp1_frozen3d.sbatch)
-# JOB3=$(sbatch --parsable scripts/run_03_exp2_finetune3d.sbatch)
-# JOB4=$(sbatch --parsable scripts/run_04_exp3_train_hybrid.sbatch)
-# sbatch --dependency=afterok:$JOB2:$JOB3:$JOB4 scripts/run_05_evaluate_models.sbatch
+
+# when run_01_preprocess_data is already done successfully
+export PIPELINE_RUN_ID="res_since_$(date +%Y%m%d_%H%M)"
+JOB2=$(sbatch --parsable scripts/run_02_exp1_frozen3d.sbatch)
+JOB3=$(sbatch --parsable scripts/run_03_exp2_finetune3d.sbatch)
+JOB4=$(sbatch --parsable scripts/run_04_exp3_train_hybrid.sbatch)
+sbatch --dependency=afterok:$JOB2:$JOB3:$JOB4 scripts/run_05_evaluate_models.sbatch
 
 
 squeue --me
 sinfo -p gpu -t idle -o "%n %G"
 scancel --me
+
 
 login-1:~$ find project_output_resnet_lstm/ -type d | awk -F/ 'count[$(NF-1)]++ < 10' | sed -e 's/[^-][^\/]*\//--/g' -e 's/^/ /' -e 's/-/|/'
 
