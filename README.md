@@ -6,6 +6,57 @@ To ensure 100% scientific reproducibility and bypass the I/O bottlenecks of read
 
 ---
 
+## 📊 Dataset & Preprocessing
+
+**Dataset:** The models are trained and evaluated on a subset of the **20BN-Jester Dataset**, a large-scale collection of densely labeled video clips showing humans performing basic pre-defined hand gestures.
+* **Target Classes:** Focused on 4 distinct gesture classes to evaluate spatiotemporal modeling (e.g., *Swiping Left, Sliding Two Fingers Down, Stop Sign, Thumb Up*).
+
+**Data Preprocessing Pipeline:**
+To optimize for GPU memory and cluster training (Zaratan HPC), the raw video MP4s/JPEGs are heavily preprocessed into standardized PyTorch tensors before training:
+1.  **Temporal Subsampling:** Videos are uniformly subsampled (or padded) to exactly **16 frames** per sequence.
+2.  **Spatial Resizing:** Frames are center-cropped and resized to **224x224** pixels.
+3.  **Tensor Serialization:** Preprocessed sequences are saved as `.pt` tensor files for high-speed I/O loading during training, bypassing heavy video-decoding bottlenecks.
+4.  **Robust Dataloading:** The custom `JesterTensorDataset` dynamically drops empty/corrupted rows, securely maps string labels to integer indices, and falls back to zero-tensors if a sequence is missing, ensuring uninterrupted cluster jobs.
+
+## Methodology & Architectures
+
+We evaluated three distinct architectural approaches to understand the trade-offs between spatial and temporal feature extraction:
+
+### 1. Baseline 1: Frozen ResNet-3D-18
+* **Architecture:** Uses a pre-trained `r3d_18` model. The 3D convolutional backbone is entirely frozen, and only a newly initialized fully connected (FC) classification head is trained.
+* **Purpose:** Establishes a baseline to see if out-of-the-box 3D spatiotemporal features learned from generalized video datasets (like Kinetics) map well to specific hand gestures.
+
+### 2. Baseline 2: Fine-Tuned ResNet-3D-18
+* **Architecture:** The same `r3d_18` architecture, but the entire network is unfrozen and fine-tuned.
+* **Purpose:** Allows the 3D convolutional kernels to adapt specifically to the gradient flow of hand movement. 
+
+### 3. Proposed Hybrid: ResNet-50 + LSTM
+* **Architecture:** A 2D spatial extractor (`ResNet-50`) applied frame-by-frame, followed by a Temporal Sequence Modeler (`LSTM`) to classify the gesture across time.
+* **Current Observation:** This model currently underperforms compared to the 3D networks. 
+* **Theoretical Cause:** ResNet-50 is a 2D network; it processes every frame as an isolated, static photograph. By the time it passes its 2048-dimensional feature vector to the LSTM, the rich motion data (the "swipe") is drowned out by the static background noise of the room. Conversely, 3D kernels ($x, y, t$) natively track pixel gradients *over time*, naturally zeroing out static background noise.
+
+## 🛡️ Pipeline Engineering & Robustness
+
+The training pipeline is built with enterprise MLOps standards to prevent overfitting and track cluster experiments:
+* **Experiment Tracking:** Uses dynamic `PIPELINE_RUN_ID` environment variables. Model weights are kept static for easy downstream evaluation, while all loss curves, confusion matrices, and prediction `.csv` files are automatically routed to timestamped run folders.
+* **Overfitting Safeguards:** Implemented Early Stopping (patience=5), Gradient Clipping (max_norm=1.0) to prevent exploding gradients in the LSTM, Dropout (p=0.5), and $L_2$ Regularization (Weight Decay).
+* **Error Analysis:** The evaluation script natively tracks test-set `video_ids`, mapping predictions vs. actuals into CSVs so researchers can visually inspect the specific videos the model failed on.
+
+## Future Work & Improvements
+
+To address the performance gap of the Hybrid model and push accuracy higher, the following techniques are proposed for future iterations:
+
+1.  **Optical Flow / Frame Differencing (Data Level):**
+    * Instead of passing raw RGB frames to the ResNet-50, we will pass *differences* between consecutive frames, or calculate dense Optical Flow. This explicitly forces the network to look only at the moving pixels (the hand) and completely eliminates static background interference.
+2.  **Bi-Directional Deep LSTMs (Temporal Level):**
+    * Upgrading the 1-layer LSTM to a 2-layer Bi-Directional LSTM. Reading the video sequence forwards and backwards allows the network to understand the complete trajectory of the hand before committing to a classification.
+3.  **Feature Normalization:**
+    * Injecting `nn.LayerNorm` between the ResNet-50 and the LSTM to act as a "volume control," preventing massive static image features from overwhelming the LSTM's sensitive forget-gates.
+4.  **Test-Time Augmentation (TTA) & Ensembling:**
+    * Evaluating overlapping 16-frame windows during inference and averaging the probabilities across the 3D and Hybrid models to create a highly robust ensemble classifier.
+
+---
+
 ## 📂 Project Structure
 
 ```text
@@ -140,6 +191,7 @@ bash scripts/init_dirs.sh
 # sbatch scripts/run_05_evaluate_models_cpu.sbatch
 
 # check space
+du -sh * .[^.]* | sort -rh | head -n 10  # this command checks everything in your home dir, including hidden files like .conda or .cache
 du -ah . --max-depth=1 | sort -rh | head -n 10
 
 
