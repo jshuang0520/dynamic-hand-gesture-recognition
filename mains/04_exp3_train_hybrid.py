@@ -30,18 +30,15 @@ def run_exp3_hybrid():
 
     criterion = nn.CrossEntropyLoss()
     
-    # --- UPGRADE: Differential Learning Rates ---
-    base_lr = cfg['experiment']['learning_rate'] # e.g., 1e-4
-    lr_mult = cfg['experiment']['backbone_lr_multiplier'] # <-- Pull from config
-
-    # The pre-trained ResNet gets a 10x smaller learning rate (1e-5)
-    # The new, randomly initialized layers get the full learning rate (1e-4)
-    optimizer = optim.Adam([
-        {'params': model.backbone.parameters(), 'lr': base_lr * lr_mult}, # <-- Use it here
-        {'params': model.projection.parameters(), 'lr': base_lr},     
-        {'params': model.lstm.parameters(), 'lr': base_lr},           
-        {'params': model.classifier.parameters(), 'lr': base_lr}      
-    ], weight_decay=cfg['experiment']['weight_decay'])
+    # --- REVERTED: Unified Learning Rate ---
+    base_lr = cfg['experiment']['learning_rate']  # Pulls 1e-4 from config
+    
+    # Train the ResNet, Projection Head, and LSTM all at the same speed!
+    optimizer = optim.Adam(
+        model.parameters(), 
+        lr=base_lr, 
+        weight_decay=cfg['experiment']['weight_decay']
+    )
     
     epochs = cfg['experiment']['num_epochs']
     best_val_loss = float('inf')
