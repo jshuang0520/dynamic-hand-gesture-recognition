@@ -11,6 +11,10 @@ experiment:
   # --- NEW: Dynamic Tensor Sizing ---
   preprocess_size: 224    # Base resolution saved to disk (for Hybrid Model)
   model_input_size: 112   # Resolution interpolated on-the-fly (for 3D ResNet)
+  # --- NEW: Hybrid Model Specific Tuning ---
+  projection_dim: 512              # How much to compress ResNet features
+  backbone_lr_multiplier: 0.1      # Differential LR (10x smaller for ResNet)
+  lstm_hidden_dim: 256
   # --- NEW: Robustness Hyperparameters ---
   dropout_rate: 0.5
   weight_decay: 0.0001
