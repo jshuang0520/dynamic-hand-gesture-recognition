@@ -10,7 +10,7 @@ else
 fi
 
 # --- 2. Resolve Base Directory ---
-BASE_DIR=${OUTPUT_ROOT_CLEAN:-"/home/shhuang/project_output_resnet_lstm"}
+BASE_DIR=${OUTPUT_ROOT_CLEAN:-"$HOME/project_output_resnet_lstm"}
 
 echo "📂 Initializing project directory structure at: $BASE_DIR"
 

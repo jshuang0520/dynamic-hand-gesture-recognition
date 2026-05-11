@@ -6,6 +6,91 @@ To ensure 100% scientific reproducibility and bypass the I/O bottlenecks of read
 
 ---
 
+# Steps and Commands to Execute
+
+## From localhost
+
+### For Dataset & Preprocessing
+
+1. Download the jester data to your local device from [here](https://www.kaggle.com/datasets/sanjanatg26/20bn-jester-v1-complete/data)
+
+2. run the .ipynb to extract the .tgz file and 2k subsample of videos (4 gesture classes, 500 videos per class) for all
+
+- open jupyter notebook and run all cells
+```
+Instructions for running notebook:
+
+1. Download the full dataset .zip from Kaggle link here
+
+2. Extract the .tgz file from the .zip file
+
+3. Download the 20bn-jester-v1/annotations folder from the CVND---Gesture Recognitionrepo from Udacity. This contains all the original full training, validation, test labels as .csv files.
+
+4. Run the notebook cell-by-cell
+```
+
+3.⁠ ⁠Save the to the prod/raw_data dir
+
+
+## From HPC
+
+### Prerequisites
+
+- note. copy the code from localhost to HPC, for example: (alter the account name to yours)
+```bash
+rsync -avz --exclude '.git' --exclude 'results' /Users/johnson.huang/py_ds/dynamic-hand-gesture-recognition shhuang@login.zaratan.umd.edu:/home/shhuang/scratch.msml640/
+```
+
+1. Initiate the dir structure:
+```bash
+cd scratch.msml640/dynamic-hand-gesture-recognition
+bash scripts/init_dirs.sh
+```
+
+- note. copy the preprocessed (in a smaller size) from localhost to HPC, for example: (alter the account name to yours)
+```bash
+rsync -avz --exclude '.git' /Users/johnson.huang/Downloads/prod shhuang@login.zaratan.umd.edu:/home/shhuang/scratch.msml640/project_output_resnet_lstm/prod
+```
+
+2. Build virtual environment
+```bash
+bash scripts/setup_env.sh
+```
+
+3. Prepare your `.env` file, for example: (alter the account name to yours)
+```yaml
+PROJECT_ROOT=/home/shhuang/scratch.msml640/dynamic-hand-gesture-recognition
+OUTPUT_ROOT=/home/shhuang/scratch.msml640/project_output_resnet_lstm
+ENV_DIR=/home/shhuang/scratch.msml640/gesture_rec_env
+RAW_ORIGINAL_JESTER_DIR=/home/shhuang/scratch.msml640/20bn-jester-v1
+```
+
+### Commands to execute the scripts
+
+- note. your pwd: `$HOME/scratch.msml640/dynamic-hand-gesture-recognition`
+
+```bash
+# prod run
+# 0. Generate the timestamp once (e.g., res_since_20260503_1701) and export it
+export PIPELINE_RUN_ID="res_since_$(date +%Y%m%d_%H%M)"
+# 2. Launch your jobs! They will all inherit that exact same PIPELINE_RUN_ID
+# 1. Run the first job and capture its Job ID
+JOB1=$(sbatch --parsable scripts/run_01_preprocess_data.sbatch)
+# 2. Run the next 3 jobs in parallel, waiting for JOB1 to finish successfully
+JOB2=$(sbatch --parsable --dependency=afterok:$JOB1 scripts/run_02_exp1_frozen3d.sbatch)
+JOB3=$(sbatch --parsable --dependency=afterok:$JOB1 scripts/run_03_exp2_finetune3d.sbatch)
+JOB4=$(sbatch --parsable --dependency=afterok:$JOB1 scripts/run_04_exp3_train_hybrid.sbatch)
+# 3. Run the final job only after all three middle jobs (JOB2, JOB3, and JOB4) finish successfully
+sbatch --dependency=afterok:$JOB2:$JOB3:$JOB4 scripts/run_05_evaluate_models.sbatch
+```
+
+
+
+
+
+
+---
+
 ## 📊 Dataset & Preprocessing
 
 **Dataset:** The models are trained and evaluated on a subset of the **20BN-Jester Dataset**, a large-scale collection of densely labeled video clips showing humans performing basic pre-defined hand gestures.
