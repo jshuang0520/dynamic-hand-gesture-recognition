@@ -10,6 +10,11 @@ To ensure 100% scientific reproducibility and bypass the I/O bottlenecks of read
 
 ## From localhost
 
+- Build virtual environment (cd to project root: `dynamic-hand-gesture-recognition`)
+```bash
+bash scripts/setup_env.sh
+```
+
 ### For Dataset & Preprocessing
 
 1. Download the jester data to your local device from [here](https://www.kaggle.com/datasets/sanjanatg26/20bn-jester-v1-complete/data)
@@ -20,11 +25,11 @@ To ensure 100% scientific reproducibility and bypass the I/O bottlenecks of read
 ```
 Instructions for running notebook:
 
-1. Download the full dataset .zip from Kaggle link here
+1. Download the full dataset .zip from Kaggle link [here](https://www.kaggle.com/datasets/sanjanatg26/20bn-jester-v1-complete/data)
 
 2. Extract the .tgz file from the .zip file
 
-3. Download the 20bn-jester-v1/annotations folder from the CVND---Gesture Recognitionrepo from Udacity. This contains all the original full training, validation, test labels as .csv files.
+3. Download the 20bn-jester-v1/annotations folder from the [CVND---Gesture Recognition](https://github.com/udacity/CVND---Gesture-Recognition) repo from Udacity. This contains all the original full training, validation, test labels as .csv files.
 
 4. Run the notebook cell-by-cell
 ```
@@ -65,7 +70,7 @@ ENV_DIR=/home/shhuang/scratch.msml640/gesture_rec_env
 RAW_ORIGINAL_JESTER_DIR=/home/shhuang/scratch.msml640/20bn-jester-v1
 ```
 
-### Commands to execute the scripts
+### Commands to execute the scripts, from preprocessing, model training, to evaluation
 
 - note. your pwd: `$HOME/scratch.msml640/dynamic-hand-gesture-recognition`
 
