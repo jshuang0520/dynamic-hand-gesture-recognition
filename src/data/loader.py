@@ -1,4 +1,6 @@
 import os
+import random
+import numpy as np
 import torch
 import pandas as pd
 from torch.utils.data import Dataset, DataLoader
@@ -6,11 +8,17 @@ from utilities.logger import get_logger
 
 logger = get_logger("DATALOADER")
 
+# --- FIX: Seed initialization for CPU multi-processing ---
+def seed_worker(worker_id):
+    worker_seed = torch.initial_seed() % 2**32
+    np.random.seed(worker_seed)
+    random.seed(worker_seed)
+
 class JesterTensorDataset(Dataset):
     def __init__(self, csv_path, processed_dir, target_classes):
         self.data = pd.read_csv(csv_path)
         
-        # --- FIX: Drop empty rows to completely prevent the KeyError: 'nan' ---
+        # Drop empty rows to completely prevent the KeyError: 'nan'
         self.data.dropna(subset=['video_id', 'gesture'], inplace=True)
         
         self.processed_dir = processed_dir
@@ -34,11 +42,11 @@ class JesterTensorDataset(Dataset):
 
         path = os.path.join(self.processed_dir, f"{vid_id}.pt")
         
-        # --- YOUR RESTORED LOGIC: Safety fallback for missing tensors ---
+        # Safety fallback for missing tensors
         if not os.path.exists(path):
             return torch.zeros((16, 3, 224, 224)), label_idx, vid_id
 
-        # --- HANNAH'S FIX: Return 3 items (Tensor, Label, ID) ---
+        # Return 3 items (Tensor, Label, ID)
         return torch.load(path), label_idx, vid_id
 
 def get_loaders(config):
@@ -47,6 +55,11 @@ def get_loaders(config):
     
     bz = config['experiment']['batch_size']
     classes = config['experiment']['target_classes']
+    seed = config['experiment']['seed']
+    
+    # --- FIX: Create a deterministic generator ---
+    g = torch.Generator()
+    g.manual_seed(seed)
     
     # Check for 'validation.csv' vs 'val.csv' dynamically
     val_csv_name = "validation.csv" if os.path.exists(os.path.join(ann_path, "validation.csv")) else "val.csv"
@@ -55,6 +68,12 @@ def get_loaders(config):
     val_ds = JesterTensorDataset(os.path.join(ann_path, val_csv_name), p_path, classes)
     
     return (
-        DataLoader(train_ds, batch_size=bz, shuffle=True, num_workers=4, pin_memory=True),
-        DataLoader(val_ds, batch_size=bz, shuffle=False, num_workers=4, pin_memory=True)
+        DataLoader(
+            train_ds, batch_size=bz, shuffle=True, num_workers=4, pin_memory=True,
+            worker_init_fn=seed_worker, generator=g
+        ),
+        DataLoader(
+            val_ds, batch_size=bz, shuffle=False, num_workers=4, pin_memory=True,
+            worker_init_fn=seed_worker, generator=g
+        )
     )

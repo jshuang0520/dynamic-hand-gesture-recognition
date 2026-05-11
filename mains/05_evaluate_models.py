@@ -109,7 +109,8 @@ def run_evaluation():
         true_labels_str = [classes[i] for i in labels]
         pred_labels_str = [classes[i] for i in preds]
         
-        report = classification_report(true_labels_str, pred_labels_str, target_names=classes)
+        # --- ONLY THIS LINE CHANGED: Fixed sklearn label sorting ---
+        report = classification_report(true_labels_str, pred_labels_str, labels=classes, target_names=classes)
         logger.info(f"\nClassification Report for {exp_name}:\n{report}")
 
         # --- HANNAH'S FIX: Pandas DataFrame Export ---

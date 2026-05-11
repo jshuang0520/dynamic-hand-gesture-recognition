@@ -5,11 +5,16 @@ import torch.nn as nn
 import torch.optim as optim
 from utilities.config_parser import load_config
 from utilities.logger import get_logger
+from utilities.reproducibility import lock_seeds
 from src.data.loader import get_loaders
 from src.models.hybrid import HybridResNetLSTM
 
 def run_exp3_hybrid():
     cfg = load_config()
+    
+    # --- FIX: Lock seeds immediately ---
+    lock_seeds(cfg['experiment']['seed'])
+    
     logger = get_logger("04_EXP3_HYBRID", log_dir=cfg['paths']['logs_dir'])
     logger.info("Initializing Experiment 3 (Robust Hybrid ResNet50 + LSTM with Projection)")
     

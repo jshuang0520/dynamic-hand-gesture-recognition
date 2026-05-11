@@ -216,6 +216,13 @@ JOB3=$(sbatch --parsable scripts/run_03_exp2_finetune3d.sbatch)
 JOB4=$(sbatch --parsable scripts/run_04_exp3_train_hybrid.sbatch)
 sbatch --dependency=afterok:$JOB2:$JOB3:$JOB4 scripts/run_05_evaluate_models.sbatch
 
+# run demo
+export PIPELINE_RUN_ID="res_since_$(date +%Y%m%d_%H%M)"
+JOB6=$(sbatch --parsable scripts/run_06_demo_cpu.sbatch)
+LOG_FILE="/home/shhuang/scratch.msml640/project_output_resnet_lstm/prod/logs/06_demo-$JOB6.out"
+echo "⏳ Job $JOB6 is queued. Waiting for compute node..."
+until [ -f "$LOG_FILE" ]; do sleep 2; done && \
+tail -f "$LOG_FILE"
 
 squeue --me
 sinfo -p gpu -t idle -o "%n %G"

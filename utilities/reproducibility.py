@@ -17,4 +17,4 @@ def lock_seeds(seed=20260430):
         torch.cuda.manual_seed_all(seed)
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
-    logger(f"Universal random seed locked to {seed}")
+    logger.info(f"🔒 Universal random seed locked to {seed}")

@@ -7,10 +7,15 @@ import torch.optim as optim
 from torchvision.models.video import r3d_18, R3D_18_Weights
 from utilities.config_parser import load_config
 from utilities.logger import get_logger
+from utilities.reproducibility import lock_seeds
 from src.data.loader import get_loaders
 
 def run_exp2_finetune():
     cfg = load_config()
+    
+    # --- FIX: Lock seeds immediately ---
+    lock_seeds(cfg['experiment']['seed'])
+    
     logger = get_logger("03_EXP2_FINETUNE", log_dir=cfg['paths']['logs_dir'])
     logger.info("Initializing Baseline 2 (Full Fine-Tuning ResNet-3D-18)")
     
