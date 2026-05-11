@@ -19,7 +19,7 @@ bash scripts/setup_env.sh
 
 1. Download the jester data to your local device from [here](https://www.kaggle.com/datasets/sanjanatg26/20bn-jester-v1-complete/data)
 
-2. run the .ipynb to extract the .tgz file and 2k subsample of videos (4 gesture classes, 500 videos per class) for all
+2. run the `scripts/run_00_generate_2k_subsample_and_quick_testing_sets.ipynb` to extract the .tgz file and 2k subsample of videos (4 gesture classes, 500 videos per class) for all
 
 - open jupyter notebook and run all cells
 ```
