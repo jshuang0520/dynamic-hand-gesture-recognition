@@ -111,7 +111,7 @@ sbatch --dependency=afterok:$JOB2:$JOB3:$JOB4 scripts/run_05_evaluate_models.sba
 **Data Preprocessing Pipeline:**
 To optimize for GPU memory and cluster training (Zaratan HPC), the raw video MP4s/JPEGs are heavily preprocessed into standardized PyTorch tensors before training:
 1.  **Temporal Subsampling:** Videos are uniformly subsampled (or padded) to exactly **16 frames** per sequence.
-2.  **Spatial Resizing:** Frames are center-cropped and resized to **224x224** pixels.
+2.  **Spatial Resizing:** Frames are center-cropped and resized to **224x224** pixels for ResNet-50 backbone; **112x112** pixels for 3D ResNet-18 backbone.
 3.  **Tensor Serialization:** Preprocessed sequences are saved as `.pt` tensor files for high-speed I/O loading during training, bypassing heavy video-decoding bottlenecks.
 4.  **Robust Dataloading:** The custom `JesterTensorDataset` dynamically drops empty/corrupted rows, securely maps string labels to integer indices, and falls back to zero-tensors if a sequence is missing, ensuring uninterrupted cluster jobs.
 
