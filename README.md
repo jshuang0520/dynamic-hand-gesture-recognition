@@ -8,12 +8,18 @@ To ensure 100% scientific reproducibility and bypass the I/O bottlenecks of read
 
 # Steps and Commands to Execute
 
+## Python Version  (fit for HPC)
+```
+python 3.11.13
+```
+
 ## From localhost
 
 - Build virtual environment (cd to project root: `dynamic-hand-gesture-recognition`)
 ```bash
 bash scripts/setup_env.sh
 ```
+- note. try this [requirements yaml file here](https://github.com/jshuang0520/dynamic-hand-gesture-recognition/blob/data_preprocessing/environment.yml) if it doesn't work
 
 ### For Dataset & Preprocessing
 
@@ -34,17 +40,22 @@ Instructions for running notebook:
 4. Run the notebook cell-by-cell
 ```
 
-3.⁠ ⁠Save the to the prod/raw_data dir
+3.⁠ The subsampled dataset will be saved to `prod/raw_data` dir
+
+- NOTE. Run this `rsync` or `scp` command to copy the preprocessed (in a smaller size) from localhost to HPC, for example: (alter the account name / path to yours)
+```bash
+rsync -avz --exclude '.git' /Users/johnson.huang/Downloads/prod shhuang@login.zaratan.umd.edu:/home/shhuang/scratch.msml640/project_output_resnet_lstm/prod
+```
+
+- NOTE. Run this `rsync` or `scp` command to copy the code from localhost to HPC, for example: (alter the account name / path to yours)
+```bash
+rsync -avz --exclude '.git' --exclude 'results' /Users/johnson.huang/py_ds/dynamic-hand-gesture-recognition shhuang@login.zaratan.umd.edu:/home/shhuang/scratch.msml640/
+```
 
 
 ## From HPC
 
 ### Prerequisites
-
-- note. copy the code from localhost to HPC, for example: (alter the account name to yours)
-```bash
-rsync -avz --exclude '.git' --exclude 'results' /Users/johnson.huang/py_ds/dynamic-hand-gesture-recognition shhuang@login.zaratan.umd.edu:/home/shhuang/scratch.msml640/
-```
 
 1. Initiate the dir structure:
 ```bash
@@ -52,10 +63,6 @@ cd scratch.msml640/dynamic-hand-gesture-recognition
 bash scripts/init_dirs.sh
 ```
 
-- note. copy the preprocessed (in a smaller size) from localhost to HPC, for example: (alter the account name to yours)
-```bash
-rsync -avz --exclude '.git' /Users/johnson.huang/Downloads/prod shhuang@login.zaratan.umd.edu:/home/shhuang/scratch.msml640/project_output_resnet_lstm/prod
-```
 
 2. Build virtual environment
 ```bash
@@ -138,12 +145,10 @@ To address the performance gap of the Hybrid model and push accuracy higher, the
 
 1.  **Optical Flow / Frame Differencing (Data Level):**
     * Instead of passing raw RGB frames to the ResNet-50, we will pass *differences* between consecutive frames, or calculate dense Optical Flow. This explicitly forces the network to look only at the moving pixels (the hand) and completely eliminates static background interference.
-2.  **Bi-Directional Deep LSTMs (Temporal Level):**
-    * Upgrading the 1-layer LSTM to a 2-layer Bi-Directional LSTM. Reading the video sequence forwards and backwards allows the network to understand the complete trajectory of the hand before committing to a classification.
-3.  **Feature Normalization:**
-    * Injecting `nn.LayerNorm` between the ResNet-50 and the LSTM to act as a "volume control," preventing massive static image features from overwhelming the LSTM's sensitive forget-gates.
-4.  **Test-Time Augmentation (TTA) & Ensembling:**
+2.  **Test-Time Augmentation (TTA) & Ensembling:**
     * Evaluating overlapping 16-frame windows during inference and averaging the probabilities across the 3D and Hybrid models to create a highly robust ensemble classifier.
+3. **Temporal Segment Sampling (TSN):**
+    * It first divides the entire video into equal segments, then picks a random frame from each segment, it guarantees that the model covers the entire timeline of the video (just like Uniform sampling), but the model will almost never see the exact same 16 frames twice across different training epochs. This prevents the model from simply memorizing specific frames and drastically reduces overfitting.
 
 ---
 
